@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Home">
+<meta name="theme-color" content="#1a7fd4">
+<title>Home</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* Family 跳轉按鈕 */
+.btn-family {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: #fff4ed;
+  border: 1.5px solid #e67e22;
+  border-radius: 8px;
+  color: #e67e22;
+  font-size: .82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: 'Noto Sans TC', sans-serif;
+  transition: background .15s;
+  flex-shrink: 0;
+}
+.btn-family:active { background: #ffe5cc; }
+.btn-family svg { flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="loading-ov" id="loading">
+  <div class="spinner"></div>
+  <div style="color:var(--muted);font-size:.95rem">Home</div>
+</div>
+
+<div id="auth-screen">
+  <div class="auth-logo"><img src="icons/icon-192.png" alt="Home"></div>
+  <div class="auth-title">Home</div>
+  <div class="auth-sub">加油 · 收支 管理系統<br>請使用 Google 帳號登入</div>
+  <button class="btn-google" onclick="AUTH.signIn()">
+    <img src="https://www.google.com/favicon.ico" alt="">使用 Google 帳號登入
+  </button>
+</div>
+
+<div id="desktop-layout">
+<div id="app" style="display:none">
+
+  <div id="header">
+    <!-- 左上角：Family 跳轉按鈕 -->
+    <button class="btn-family" onclick="goToFamily()" title="前往家族紀念日">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      Family
+    </button>
+    <div class="hdr-actions">
+      <button class="hdr-btn" onclick="APP.refresh()">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      </button>
+      <button class="hdr-btn" onclick="APP.openSearch()">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <button class="hdr-btn" onclick="AUTH.signOut()">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Sub tabs -->
+  <div class="sub-tabs sub-tabs-even" id="sub-car" style="display:none">
+    <button class="sub-tab active" data-sub="oil">加油</button>
+    <button class="sub-tab" data-sub="oilStat">統計</button>
+    <button class="sub-tab" data-sub="expense">開支</button>
+    <button class="sub-tab" data-sub="yearStat">年度</button>
+  </div>
+  <div class="sub-tabs sub-tabs-even" id="sub-detail" style="display:flex">
+    <button class="sub-tab active" data-sub="curMonth">當月</button>
+    <button class="sub-tab" data-sub="prevMonth">上月</button>
+    <button class="sub-tab" data-sub="expAna">支出分析</button>
+    <button class="sub-tab" data-sub="stockAna">股票</button>
+  </div>
+  <div class="sub-tabs sub-tabs-even" id="sub-ov" style="display:none">
+    <button class="sub-tab active" data-sub="estInc">預估/月Inc.</button>
+    <button class="sub-tab" data-sub="monthExp">月Exp.</button>
+    <button class="sub-tab" data-sub="balance">月結餘</button>
+    <button class="sub-tab" data-sub="annualSum">年度</button>
+    <button class="sub-tab" data-sub="lineChart">折線圖</button>
+  </div>
+
+  <div id="content">
+    <div id="tab-swipe-container">
+    <div id="tab-swipe-inner">
+
+      <!-- ════ PAGE 0: 汽車 ════ -->
+      <div id="pg-car" class="page">
+
+        <div class="sub-page active" id="sp-oil">
+          <div class="frozen-table-wrap">
+            <table class="oil-table">
+              <thead><tr>
+                <th class="th-date">日期</th>
+                <th class="th-money">實際油錢</th>
+                <th class="th-num">當日油錢</th>
+                <th class="th-num">自助折扣</th>
+                <th class="th-num">刷卡折扣</th>
+                <th class="th-num">總折扣</th>
+                <th class="th-num">公升數</th>
+                <th class="th-num">總里程</th>
+                <th class="th-num">里程</th>
+                <th class="th-num">油耗km/L</th>
+                <th class="th-num">油錢$/km</th>
+                <th class="th-num">折扣/L</th>
+                <th class="th-str">方案</th>
+              </tr></thead>
+              <tbody id="oil-tbody"><tr><td colspan="13" class="load-msg">載入中...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="sub-page" id="sp-oilStat">
+          <div class="frozen-table-wrap" id="oil-stat-content"><div class="load-msg">載入中...</div></div>
+        </div>
+
+        <div class="sub-page" id="sp-expense">
+          <div class="scroll-content" id="expense-list"><div class="load-msg">載入中...</div></div>
+        </div>
+
+        <div class="sub-page" id="sp-yearStat">
+          <div class="frozen-table-wrap" id="year-stat-content"><div class="load-msg">載入中...</div></div>
+        </div>
+
+      <div class="ov-swipe-hint" id="car-swipe-hint">← 底部左右滑動切換分頁 →</div>
+      </div><!-- /pg-car -->
+
+      <!-- ════ PAGE 1: 細項 ════ -->
+      <div id="pg-detail" class="page">
+
+        <div class="sub-page active" id="sp-curMonth">
+          <div class="month-label" id="label-curMonth"></div>
+          <div class="scroll-content" id="cur-month-list"><div class="load-msg">載入中...</div></div>
+        </div>
+
+        <div class="sub-page" id="sp-prevMonth">
+          <div class="month-label" id="label-prevMonth"></div>
+          <div class="scroll-content" id="prev-month-list"><div class="load-msg">載入中...</div></div>
+        </div>
+
+        <div class="sub-page" id="sp-expAna">
+          <div class="frozen-table-wrap" id="exp-ana-content"><div class="load-msg">載入中...</div></div>
+        </div>
+
+        <div class="sub-page" id="sp-stockAna">
+          <div class="frozen-table-wrap" id="stock-ana-content"><div class="load-msg">載入中...</div></div>
+        </div>
+
+      </div><!-- /pg-detail -->
+
+      <!-- ════ PAGE 2: 收支總覽 ════ -->
+      <div id="pg-overview" class="page">
+
+        <div class="sub-page active" id="sp-estInc">
+          <div class="frozen-table-wrap" id="est-inc-content"><div class="load-msg">載入中...</div></div>
+        </div>
+
+        <div class="sub-page" id="sp-monthExp">
+          <div class="frozen-table-wrap" id="month-exp-content"><div class="load-msg">載入中...</div></div>
+        </div>
+
+        <div class="sub-page" id="sp-balance">
+          <div class="tbl-wrap" id="balance-content"><div class="load-msg">載入中...</div></div>
+        </div>
+
+        <div class="sub-page" id="sp-annualSum">
+          <div class="frozen-table-wrap" id="annual-sum-content"><div class="load-msg">載入中...</div></div>
+        </div>
+
+        <div class="sub-page" id="sp-lineChart">
+          <div class="scroll-content" id="line-chart-content"><div class="load-msg">載入中...</div></div>
+        </div>
+
+      <div class="ov-swipe-hint" id="ov-swipe-hint">← 底部左右滑動切換分頁 →</div>
+      </div><!-- /pg-overview -->
+
+    </div></div>
+  </div><!-- /content -->
+
+  <!-- Bottom Tabs -->
+  <div id="bottom-tabs">
+    <button class="tab-btn" data-tab="car">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="1" y="9" width="22" height="11" rx="2"/>
+        <path d="M5 9V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2"/>
+        <circle cx="7" cy="20" r="1"/><circle cx="17" cy="20" r="1"/>
+      </svg>
+      汽車
+    </button>
+    <button class="tab-btn active" data-tab="detail">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <line x1="12" y1="1" x2="12" y2="23"/>
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+      細項
+    </button>
+    <button class="tab-btn" data-tab="overview">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+      收支總覽
+    </button>
+  </div>
+
+</div><!-- /app -->
+</div><!-- /desktop-layout -->
+
+<button class="fab" id="fab" style="display:none">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+</button>
+
+<div id="toast"></div>
+
+<!-- ══ MODAL: 加油 ══ -->
+<div class="modal-bd" id="modal-add-oil" onclick="if(event.target===this)APP.closeModal('modal-add-oil')">
+<div class="modal-sheet">
+  <div class="modal-handle"></div>
+  <div class="modal-title" id="modal-oil-title">新增加油記錄</div>
+  <div class="fg">
+    <label class="fg-label">日期</label>
+    <input class="f-input" type="date" id="oil-date">
+  </div>
+  <div class="fg">
+    <label class="fg-label">當日油錢 <span class="fg-hint">(牌價×公升)</span></label>
+    <input class="f-input" type="number" id="oil-daily" placeholder="0" inputmode="numeric" oninput="APP.calcOil()">
+  </div>
+  <div class="fg">
+    <label class="fg-label">公升數</label>
+    <input class="f-input" type="number" id="oil-liters" placeholder="0.00" step="0.01" inputmode="decimal" oninput="APP.calcOil()">
+  </div>
+  <div class="fg">
+    <label class="fg-label">總里程數 (km)</label>
+    <input class="f-input" type="number" id="oil-totalKm" placeholder="0" inputmode="numeric" oninput="APP.calcOil()">
+  </div>
+  <div class="fg">
+    <label class="fg-label">方案</label>
+    <div class="chip-row" id="oil-plan-chips">
+      <button class="chip on" onclick="APP.selectPlan(this,'中油自助玉山4.5%')">自助玉山4.5%</button>
+      <button class="chip" onclick="APP.selectPlan(this,'中油自助玉山3.5%')">自助玉山3.5%</button>
+      <button class="chip" onclick="APP.selectPlan(this,'玉山4.5%')">玉山4.5%</button>
+      <button class="chip" onclick="APP.selectPlan(this,'玉山3.5%')">玉山3.5%</button>
+      <button class="chip" onclick="APP.selectPlan(this,'全國自助台新3.3%')">全國自助台新3.3%</button>
+      <button class="chip" onclick="APP.selectPlan(this,'台新3.3%')">台新3.3%</button>
+      <button class="chip" onclick="APP.selectPlan(this,'無')">無</button>
+    </div>
+  </div>
+  <div class="calc-preview" id="oil-calc-preview">
+    <div class="calc-row"><span class="calc-k">自助折扣</span><span class="calc-v" id="c-self">-</span></div>
+    <div class="calc-row"><span class="calc-k">刷卡折扣</span><span class="calc-v" id="c-card">-</span></div>
+    <div class="calc-row"><span class="calc-k">總折扣</span><span class="calc-v" id="c-total">-</span></div>
+    <div class="calc-row calc-hl"><span class="calc-k">實際油錢</span><span class="calc-v" id="c-actual">-</span></div>
+    <div class="calc-row"><span class="calc-k">里程</span><span class="calc-v" id="c-km">-</span></div>
+    <div class="calc-row"><span class="calc-k">油耗 km/L</span><span class="calc-v" id="c-eff">-</span></div>
+    <div class="calc-row"><span class="calc-k">油錢 $/km</span><span class="calc-v" id="c-cpk">-</span></div>
+    <div class="calc-row"><span class="calc-k">折扣/L</span><span class="calc-v" id="c-dpl">-</span></div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="APP.closeModal('modal-add-oil')">取消</button>
+    <button class="btn-save" onclick="APP.saveOil()">儲存</button>
+  </div>
+</div></div>
+
+<!-- ══ MODAL: 加油詳情 ══ -->
+<div class="modal-bd" id="modal-oil-detail" onclick="if(event.target===this)APP.closeModal('modal-oil-detail')">
+<div class="modal-sheet">
+  <div class="modal-handle"></div>
+  <div class="modal-title">加油記錄</div>
+  <div id="oil-detail-content"></div>
+  <div class="modal-actions">
+    <button class="btn-danger" id="oil-detail-del-btn">刪除</button>
+    <button class="btn-cancel" onclick="APP.closeModal('modal-oil-detail')">關閉</button>
+    <button class="btn-save" id="oil-detail-edit-btn">編輯</button>
+  </div>
+</div></div>
+
+<!-- ══ MODAL: 開支 ══ -->
+<div class="modal-bd" id="modal-add-expense" onclick="if(event.target===this)APP.closeModal('modal-add-expense')">
+<div class="modal-sheet">
+  <div class="modal-handle"></div>
+  <div class="modal-title">新增開支</div>
+  <div class="fg">
+    <label class="fg-label">日期</label>
+    <input class="f-input" type="date" id="exp-date">
+  </div>
+  <div class="fg">
+    <label class="fg-label">類別</label>
+    <div class="chip-row" id="exp-cat-chips">
+      <button class="chip on" onclick="APP.selectExpCat(this,'保養')">保養</button>
+      <button class="chip" onclick="APP.selectExpCat(this,'保險')">保險</button>
+      <button class="chip" onclick="APP.selectExpCat(this,'稅費')">稅費</button>
+    </div>
+  </div>
+  <div class="fg">
+    <label class="fg-label">項目</label>
+    <div class="chip-row" id="exp-item-chips" style="display:none;margin-bottom:8px"></div>
+    <input class="f-input" type="text" id="exp-item" placeholder="輸入項目名稱">
+  </div>
+  <div class="fg">
+    <label class="fg-label">金額</label>
+    <input class="f-input" type="number" id="exp-amount" placeholder="0" inputmode="numeric">
+  </div>
+  <div class="fg">
+    <label class="fg-label">備註 <span class="fg-hint">（選填）</span></label>
+    <input class="f-input" type="text" id="exp-note" placeholder="備註">
+  </div>
+  <div class="fg">
+    <label class="fg-label">里程 <span class="fg-hint">（選填）</span></label>
+    <input class="f-input" type="text" id="exp-mileage" placeholder="例：45000km">
+  </div>
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="APP.closeModal('modal-add-expense')">取消</button>
+    <button class="btn-save" onclick="APP.saveExpense()">儲存</button>
+  </div>
+</div></div>
+
+<!-- ══ MODAL: 開支詳情 ══ -->
+<div class="modal-bd" id="modal-exp-detail" onclick="if(event.target===this)APP.closeModal('modal-exp-detail')">
+<div class="modal-sheet">
+  <div class="modal-handle"></div>
+  <div class="modal-title">開支記錄</div>
+  <div id="exp-detail-content"></div>
+  <div class="modal-actions">
+    <button class="btn-danger" id="exp-detail-del-btn">刪除</button>
+    <button class="btn-cancel" onclick="APP.closeModal('modal-exp-detail')">關閉</button>
+    <button class="btn-save" id="exp-detail-edit-btn">編輯</button>
+  </div>
+</div></div>
+
+<!-- ══ MODAL: 收支記錄 ══ -->
+<div class="modal-bd" id="modal-add-data" onclick="if(event.target===this)APP.closeModal('modal-add-data')">
+<div class="modal-sheet">
+  <div class="modal-handle"></div>
+  <div class="modal-title" id="modal-data-title">新增收支記錄</div>
+
+  <div class="fg">
+    <label class="fg-label">日期</label>
+    <input class="f-input" type="date" id="data-date">
+  </div>
+
+  <div class="fg">
+    <label class="fg-label">金額</label>
+    <input class="f-input" type="number" id="data-amount" placeholder="0" inputmode="numeric">
+  </div>
+
+  <div class="fg">
+    <label class="fg-label">收支</label>
+    <div class="io-chip-row">
+      <button class="io-chip data-io-chip" data-io="Inc." onclick="APP.selectDataIO('Inc.')">收入 Inc.</button>
+      <button class="io-chip data-io-chip" data-io="Exp." onclick="APP.selectDataIO('Exp.')">支出 Exp.</button>
+    </div>
+  </div>
+
+  <div class="fg">
+    <label class="fg-label">項目</label>
+    <div class="chip-row" id="data-item-chips"></div>
+  </div>
+
+  <div class="fg">
+    <label class="fg-label">備註</label>
+    <div class="chip-row" id="data-note-chips" style="margin-bottom:8px;display:none"></div>
+    <input class="f-input" type="text" id="data-note" placeholder="備註（選填）">
+  </div>
+
+  <div class="fg" id="data-counted-wrap" style="display:none">
+    <label class="fg-label">計入總額方式</label>
+    <div class="counted-chip-row">
+      <button class="counted-chip data-counted-chip" data-counted="FALSE" onclick="APP.selectDataCounted('FALSE')">已刷卡</button>
+      <button class="counted-chip data-counted-chip on" data-counted="TRUE" onclick="APP.selectDataCounted('TRUE')">現金/轉帳</button>
+    </div>
+  </div>
+
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="APP.closeModal('modal-add-data')">取消</button>
+    <button class="btn-save" onclick="APP.saveData()">儲存</button>
+  </div>
+</div></div>
+
+<!-- ══ MODAL: 收支詳情 ══ -->
+<div class="modal-bd" id="modal-data-detail" onclick="if(event.target===this)APP.closeModal('modal-data-detail')">
+<div class="modal-sheet">
+  <div class="modal-handle"></div>
+  <div class="modal-title">收支記錄</div>
+  <div id="data-detail-content"></div>
+  <div class="modal-actions">
+    <button class="btn-danger" id="data-detail-del-btn">刪除</button>
+    <button class="btn-cancel" onclick="APP.closeModal('modal-data-detail')">關閉</button>
+    <button class="btn-save" id="data-detail-edit-btn">編輯</button>
+  </div>
+</div></div>
+
+<!-- ══ SEARCH MODAL ══ -->
+<div class="modal-bd" id="modal-search" onclick="if(event.target===this)APP.closeSearch()">
+<div class="modal-sheet" style="border-radius:20px 20px 0 0;padding:0">
+  <div style="padding:12px 16px 0">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0 12px;border-bottom:1px solid #e8eef4">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8fa3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search-input" class="f-input" type="text" placeholder="搜尋記錄..."
+        style="border:none;background:transparent;padding:0;font-size:1.05rem;flex:1"
+        oninput="APP.doSearch(this.value)">
+      <button onclick="APP.closeSearch()" style="border:none;background:none;color:#8fa3b8;font-size:1.1rem;cursor:pointer;padding:4px">✕</button>
+    </div>
+  </div>
+  <div id="search-results" style="max-height:65dvh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom)"
+    onclick="(function(e){const row=e.target.closest('[data-action]');if(!row)return;const idx=row.dataset.key;const action=row.dataset.action;APP._detailFromSearch=true;document.getElementById('modal-search').classList.remove('open');if(action==='dataDetail')APP.showDataDetail(idx);if(action==='oilDetail')APP.showOilDetail(idx);})(event)">
+    <div class="load-msg" style="color:#8fa3b8">輸入關鍵字搜尋</div>
+  </div>
+</div></div>
+
+<script src="js/auth.js"></script>
+<script src="js/sheets.js"></script>
+<script src="js/app.js"></script>
+<script>
+// ── Family 跳轉：帶 token 過去 ──
+function goToFamily() {
+  const raw = localStorage.getItem('home_tok');
+  if (!raw) { alert('請先登入'); return; }
+  try {
+    const d = JSON.parse(raw);
+    if (Date.now() > d.exp - 60000) { alert('登入已過期，請重新整理'); return; }
+    const dest = '/family/?tok=' + encodeURIComponent(d.t) + '&exp=' + d.exp;
+    window.location.href = dest;
+  } catch(e) { window.location.href = '/family/'; }
+}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+</script>
+</body>
+</html>

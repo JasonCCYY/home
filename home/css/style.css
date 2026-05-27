@@ -1,0 +1,325 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+  --bg:       #f0f4f8;
+  --surface:  #ffffff;
+  --card:     #f8fafc;
+  --elevated: #e4ecf4;
+  --accent:   #1a7fd4;
+  --acc-lt:   rgba(26,127,212,.10);
+  --acc-bd:   rgba(26,127,212,.22);
+  --green:    #0ea572;
+  --green-lt: rgba(14,165,114,.12);
+  --red:      #dc2626;
+  --red-lt:   rgba(220,38,38,.10);
+  --amber:    #f59e0b;
+  --txt:      #1a2332;
+  --txt2:     #4a6080;
+  --muted:    #8fa3b8;
+  --border:   rgba(0,0,0,.08);
+  --r:        12px;
+  --r-sm:     8px;
+  --tab-h:    58px;
+  --hdr-h:    52px;
+  --sub-h:    40px;
+  --shadow:   0 2px 12px rgba(0,0,0,.08);
+  /* frozen column: subtle right shadow only, same bg as rest */
+  --frozen-shadow: 2px 0 5px rgba(0,0,0,.07);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button,a{touch-action:manipulation}  /* prevent double-tap zoom */
+html{touch-action:manipulation}      /* prevent double-tap zoom on iOS Safari */
+html,body{height:100%;font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--txt);overflow:hidden;font-size:17px}
+
+/* ── Loading ── */
+.loading-ov{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999}
+.spinner{width:36px;height:36px;border:3px solid var(--elevated);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Desktop ── */
+#desktop-layout{display:flex;height:100dvh;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100dvh;width:100%;max-width:430px;background:var(--bg);position:relative;overflow:hidden}
+#desktop-panel{display:none}
+@media(min-width:600px){
+  #desktop-layout{justify-content:center}
+  #app{max-width:680px;box-shadow:0 0 40px rgba(0,0,0,.12)}
+}
+@media(min-width:900px){
+  #app{max-width:800px}
+}
+
+/* ── Auth ── */
+#auth-screen{display:none;flex-direction:column;align-items:center;justify-content:center;height:100dvh;background:linear-gradient(150deg,#dbeafe,#f0f4f8);padding:2rem;gap:1.6rem}
+.auth-logo{width:108px;height:108px;background:white;border:2px solid var(--acc-bd);border-radius:24px;overflow:hidden;box-shadow:var(--shadow)}
+.auth-logo img{width:100%;height:100%;object-fit:cover}
+.auth-title{font-size:2.2rem;font-weight:700;color:var(--accent)}
+.auth-sub{font-size:.95rem;color:var(--txt2);text-align:center;line-height:1.7}
+.btn-google{display:flex;align-items:center;gap:12px;background:white;color:#333;border:1px solid #ddd;border-radius:var(--r);padding:14px 28px;font-size:1rem;font-weight:500;cursor:pointer;box-shadow:var(--shadow)}
+.btn-google img{width:22px}
+
+/* ── Header ── */
+#header{height:var(--hdr-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;z-index:20;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.hdr-title{font-size:1.1rem;font-weight:700;color:var(--txt)}
+.hdr-actions{display:flex;gap:8px}
+.hdr-btn{width:36px;height:36px;border:none;background:var(--elevated);border-radius:var(--r-sm);color:var(--txt2);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.hdr-btn:active{background:var(--acc-lt);color:var(--accent)}
+
+/* ── Sub tabs ── */
+.sub-tabs{height:var(--sub-h);display:flex;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+.sub-tabs::-webkit-scrollbar{display:none}
+/* Evenly distributed tabs (car, detail) */
+.sub-tabs-even{justify-content:space-around;overflow-x:hidden}
+.sub-tabs-even .sub-tab{flex:1;text-align:center;padding:0 4px}
+.sub-tab{flex-shrink:0;padding:0 14px;height:100%;border:none;background:transparent;color:var(--muted);font-size:.88rem;font-weight:500;font-family:'Noto Sans TC',sans-serif;cursor:pointer;position:relative;white-space:nowrap}
+.sub-tab.active{color:var(--accent);font-weight:700}
+.sub-tab.active::after{content:'';position:absolute;bottom:0;left:8px;right:8px;height:2px;background:var(--accent);border-radius:2px 2px 0 0}
+
+/* ── Bottom Tabs ── */
+#bottom-tabs{background:var(--surface);border-top:1px solid var(--border);display:flex;flex-shrink:0;box-shadow:0 -1px 8px rgba(0,0,0,.06);padding-bottom:env(safe-area-inset-bottom);height:calc(var(--tab-h) + env(safe-area-inset-bottom))}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:.73rem;font-family:'Noto Sans TC',sans-serif;font-weight:500;position:relative}
+.tab-btn.active{color:var(--accent);font-weight:700}
+.tab-btn.active::before{content:'';position:absolute;top:0;left:16%;right:16%;height:2.5px;background:var(--accent);border-radius:0 0 2px 2px}
+.tab-btn svg{width:22px;height:22px}
+
+/* ── Content layout ── */
+#content{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+#tab-swipe-container{flex:1;overflow:hidden;min-height:0;display:flex;position:relative}
+#tab-swipe-inner{display:flex;flex:none;width:300%;height:100%;transition:transform .28s cubic-bezier(.4,0,.2,1);will-change:transform}
+.page{flex:0 0 calc(100% / 3);display:flex;flex-direction:column;overflow:hidden;min-height:0;position:relative}
+
+/* ── Sub pages: stacked inside page, only one visible at a time ── */
+.sub-page{
+  position:absolute;
+  top:0;left:0;right:0;bottom:0;
+  display:none;
+  flex-direction:column;
+  overflow:hidden;
+  background:#f0f4f8;
+  /* Reset scroll when switching */
+}
+.sub-page.active{display:flex;}
+
+/* ── Scroll wrappers ── */
+.scroll-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:80px;background:#ffffff}
+.tbl-wrap{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding-bottom:80px;background:#ffffff}
+.frozen-table-wrap{flex:1;overflow:scroll;-webkit-overflow-scrolling:touch;padding-bottom:80px;position:relative;margin:0;padding:0;background:#f0f4f8}
+
+/* ── Month label ── */
+.month-label{height:26px;line-height:26px;padding:0 16px;background:var(--acc-lt);font-size:.82rem;font-weight:700;color:var(--accent);flex-shrink:0;border-bottom:1px solid var(--acc-bd)}
+
+/* ── Oil table ──
+   Frozen cols: same bg as rest, only shadow to separate
+── */
+
+/* ── Generic frozen-1 table ── */
+
+/* ── Frozen-1-table (one frozen left col + sticky header) ── */
+.frozen-1-table{border-collapse:separate;border-spacing:0;white-space:nowrap;font-size:.95rem;margin:0}
+.frozen-1-table th,.frozen-1-table td{
+  padding:13px 14px;border-bottom:1px solid #e4ecf4;
+  background:#ffffff;
+}
+/* Header */
+.frozen-1-table thead tr th{
+  background:#f0f4f8!important;
+  position:sticky;top:0;z-index:10;
+  font-size:.80rem;font-weight:700;color:#6a85a0;
+  border-bottom:2px solid #d8e4f0;white-space:nowrap;text-align:right;
+  padding:11px 14px;
+}
+/* Corner header cell (top+left) */
+.frozen-1-table thead tr th:first-child{
+  position:sticky;left:0;top:0;z-index:15;
+  background:#f0f4f8!important;
+  text-align:left;
+  box-shadow:2px 0 6px rgba(0,0,0,.07);
+}
+/* Body left col */
+.frozen-1-table tbody td{
+  text-align:right;
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif;font-size:.95rem;color:#3a5070;letter-spacing:-.01em;
+}
+.frozen-1-table tbody td:first-child{
+  position:sticky;left:0;z-index:5;
+  background:#ffffff;
+  box-shadow:2px 0 6px rgba(0,0,0,.07);
+  font-weight:700;color:#1a7fd4;
+  text-align:left;font-family:'Noto Sans TC',sans-serif;font-size:.93rem;
+}
+/* Total rows */
+.frozen-1-table .total-row td{background:#f8fafc!important;font-weight:700;color:#1a2332}
+.frozen-1-table .total-row td:first-child{background:#f8fafc!important;color:#1a2332}
+/* Year group rows */
+.frozen-1-table .yr-group-hdr td,.frozen-1-table .yr-group-hdr th{background:#dce8f8!important;padding:11px 14px;font-size:.95rem;border-top:3px solid #b8cfe8;border-bottom:1px solid #c8d8ec}
+.frozen-1-table .yr-group-hdr td:first-child,.frozen-1-table .yr-group-hdr th:first-child{
+  background:#e4ecf4!important;
+  font-size:.97rem;font-weight:700;color:#1a4070;
+  position:sticky;left:0;z-index:5;
+  box-shadow:2px 0 6px rgba(0,0,0,.07);
+}
+
+
+/* ════════════════════════════════════════════
+   OIL TABLE — frozen first 2 cols
+   Col1 (date): width 64px, sticky left:0
+   Col2 (actual): sticky left:64px
+   z-index: thead > month-row > data rows
+   All backgrounds are opaque hex (no inherit/var for sticky)
+════════════════════════════════════════════ */
+.oil-table{border-collapse:separate;border-spacing:0;white-space:nowrap;font-size:.88rem;table-layout:fixed;margin:0}
+.oil-table th,.oil-table td{padding:12px 12px;border-bottom:1px solid #e4ecf4;background:#ffffff}
+/* Default header bg */
+.oil-table thead th{background:#f0f4f8!important;font-size:.76rem;font-weight:700;color:#8fa3b8;border-bottom:2px solid #e0e8f0;white-space:nowrap;text-align:right}
+/* All thead sticky top */
+.oil-table thead th{position:sticky;top:0;z-index:10}
+
+/* Col1: Date — 64px wide, sticky left:0 */
+.oil-table th:nth-child(1){width:64px;min-width:64px;text-align:left;position:sticky;left:0;top:0;z-index:20;background:#f0f4f8!important}
+.oil-table td:nth-child(1){width:64px;min-width:64px;position:sticky;left:0;z-index:5;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif;font-size:.82rem;color:#4a6080;text-align:left}
+.oil-table .month-row td:nth-child(1){position:sticky;left:0;z-index:4;background:#f0f4f8!important}
+
+/* Col2: Actual price — sticky left:64px */
+.oil-table th:nth-child(2){min-width:76px;text-align:right;position:sticky;left:64px;top:0;z-index:20;background:#f0f4f8!important;box-shadow:2px 0 6px rgba(0,0,0,.08)}
+.oil-table td:nth-child(2){position:sticky;left:64px;z-index:5;background:#ffffff;box-shadow:2px 0 6px rgba(0,0,0,.08);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif;font-weight:700;color:#1a2332;text-align:right}
+.oil-table .month-row td:nth-child(2){position:sticky;left:64px;z-index:4;background:#f0f4f8!important;box-shadow:2px 0 6px rgba(0,0,0,.08)}
+
+/* Other cols */
+.oil-table th:not(:nth-child(1)):not(:nth-child(2)){min-width:68px}
+.oil-table td:not(:nth-child(1)):not(:nth-child(2)){text-align:right;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif;font-size:.93rem;color:#3a5070}
+
+/* Month group row */
+.oil-table .month-row td{background:#f0f4f8!important;font-size:.82rem;font-weight:700;color:#4a6080;padding:6px 12px}
+.month-badge{background:#e4ecf4;border-radius:12px;padding:1px 10px;font-size:.8rem;font-weight:700;color:#4a6080}
+.month-total{font-weight:700;color:#1a2332}
+
+/* Data row hover */
+.oil-table .data-row{cursor:pointer}
+.oil-table .data-row:active td{background:#f0f4f8!important}
+.oil-table .data-row:active td:nth-child(1),.oil-table .data-row:active td:nth-child(2){background:#e8f0f8!important}
+
+/* ── List rows ── */
+.list-row{display:flex;align-items:center;padding:15px 16px;background:#ffffff;border-bottom:1px solid #e4ecf4;cursor:pointer;gap:12px;min-height:60px}
+.list-row:active{background:#f8fafc}
+.row-main{flex:1;min-width:0}
+.row-title{font-size:1.02rem;font-weight:600;color:#1a2332;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-sub{font-size:.82rem;color:#8fa3b8;margin-top:2px}
+.row-right{text-align:right;flex-shrink:0}
+.row-amount{font-size:1.02rem;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif}
+.row-amount.inc{color:#0ea572}
+.row-amount.exp{color:#dc2626}
+.row-amount.neutral{color:#1a2332}
+.row-date{font-size:.8rem;color:#8fa3b8;margin-top:1px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif}
+.row-arrow{color:#8fa3b8;font-size:.9rem;margin-left:4px;flex-shrink:0}
+
+/* ── Section headers ── */
+.section-hdr{padding:9px 16px;background:#eaf0f8;font-size:.85rem;font-weight:700;color:#3a5878;border-bottom:1px solid #d8e4f0;position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between}
+.section-badge{font-size:.82rem;font-weight:700;padding:2px 10px;border-radius:20px}
+.badge-inc{background:rgba(14,165,114,.12);color:#0ea572}
+.badge-exp{background:rgba(220,38,38,.10);color:#dc2626}
+
+/* ── Stat cards ── */
+.stat-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px 4px;flex-shrink:0}
+.stat-card{background:#ffffff;border-radius:12px;padding:12px 14px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.stat-card.full{grid-column:1/-1}
+.stat-label{font-size:.73rem;color:#8fa3b8;font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+.stat-val{font-size:1.25rem;font-weight:700;margin-top:3px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif}
+.stat-val.inc{color:#0ea572}
+.stat-val.exp{color:#dc2626}
+.stat-val.bal-pos{color:#0ea572}
+.stat-val.bal-neg{color:#dc2626}
+
+/* ── Est/month table section titles ── */
+.est-wrap{padding-bottom:80px}
+/* NO sticky on est-title inside frozen-table-wrap — overflow:scroll breaks sticky */
+.est-title{font-size:.9rem;font-weight:700;color:#4a6080;padding:10px 14px 6px;background:#f0f4f8;border-bottom:1px solid #e8eef4;margin:0}
+
+/* ── Detail analysis (inside frozen-table-wrap) ── */
+.ana-cat-hdr{padding:11px 16px;background:#dce8f8;font-size:.92rem;font-weight:700;color:#1a4070;border-bottom:2px solid #c0d4ec}
+
+/* ── Balance table ── */
+.bal-table{width:100%;border-collapse:collapse;font-size:.9rem}
+.bal-table th{padding:8px 12px;text-align:right;font-size:.76rem;font-weight:700;color:#8fa3b8;border-bottom:2px solid #e0e8f0;background:#f0f4f8;white-space:nowrap;position:sticky;top:0;z-index:5}
+.bal-table th:first-child{text-align:left}
+.bal-table td{padding:13px 14px;border-bottom:1px solid #e4ecf4;background:#ffffff;text-align:right;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif;font-size:.95rem}
+.bal-table td:first-child{text-align:left;font-family:'Noto Sans TC',sans-serif;color:#1a7fd4;font-weight:700}
+
+/* ── Annual summary ── */
+.annual-wrap{padding:12px 14px 80px}
+
+/* ── OV bottom swipe hint ── */
+.ov-swipe-hint{position:absolute;bottom:0;left:0;right:0;height:26px;line-height:26px;text-align:center;font-size:.72rem;color:#8fa3b8;background:linear-gradient(transparent,#f0f4f8 60%);pointer-events:none;z-index:10;opacity:.8}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + 16px);right:16px;width:52px;height:52px;background:#1a7fd4;border:none;border-radius:50%;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(26,127,212,.45);z-index:100;transition:transform .15s}
+.fab:active{transform:scale(.93)}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + 80px);left:50%;transform:translateX(-50%) translateY(20px);background:#1a2332;color:white;padding:10px 20px;border-radius:24px;font-size:.88rem;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:9000;white-space:nowrap;max-width:90vw}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── Modal ── */
+.modal-bd{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-bd.open{display:flex}
+/* Detail modals appear above search modal */
+#modal-data-detail,#modal-oil-detail,#modal-exp-detail{z-index:600}
+.modal-sheet{background:#ffffff;border-radius:20px 20px 0 0;padding:0 20px calc(20px + env(safe-area-inset-bottom));width:100%;max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;transition:transform .15s ease;will-change:transform}
+.modal-handle{width:40px;height:4px;background:#e4ecf4;border-radius:2px;margin:12px auto 4px}
+.modal-title{font-size:1.25rem;font-weight:700;color:#1a2332;padding:12px 0 16px;border-bottom:1px solid #e8eef4;margin-bottom:0}
+.fg{margin-bottom:13px}
+.fg-label{font-size:.88rem;font-weight:700;color:#4a6080;display:block;margin-bottom:6px}
+.fg-hint{font-weight:400;color:#8fa3b8;font-size:.8rem}
+.f-input{width:100%;border:1.5px solid #e8eef4;border-radius:8px;padding:12px 14px;font-size:.97rem;font-family:'Noto Sans TC',sans-serif;color:#1a2332;background:#f8fafc;outline:none;-webkit-appearance:none}
+.f-input:focus{border-color:#1a7fd4;background:white}
+.chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.chip{padding:10px 16px;min-height:42px;border:1.5px solid #e8eef4;border-radius:20px;font-size:.92rem;font-family:'Noto Sans TC',sans-serif;background:#f8fafc;color:#4a6080;cursor:pointer;font-weight:500;flex-shrink:0;display:flex;align-items:center;justify-content:center;min-width:48px}
+.chip.on{background:rgba(26,127,212,.10);border-color:#1a7fd4;color:#1a7fd4;font-weight:700}
+.chip.inc-chip.on{background:rgba(14,165,114,.12);border-color:#0ea572;color:#0ea572}
+.chip.exp-chip.on{background:rgba(220,38,38,.10);border-color:#dc2626;color:#dc2626}
+.io-chip-row{display:flex;gap:10px;margin-top:4px}
+.io-chip{flex:1;padding:13px 8px;border:1.5px solid #e8eef4;border-radius:8px;font-size:1rem;font-family:'Noto Sans TC',sans-serif;background:#f8fafc;color:#4a6080;cursor:pointer;font-weight:600;text-align:center;min-height:48px}
+.io-chip.on-inc{background:rgba(14,165,114,.12);border-color:#0ea572;color:#0ea572}
+.io-chip.on-exp{background:rgba(220,38,38,.10);border-color:#dc2626;color:#dc2626}
+.counted-chip-row{display:flex;gap:10px;margin-top:4px}
+.counted-chip{flex:1;padding:12px 8px;border:1.5px solid #e8eef4;border-radius:8px;font-size:.92rem;font-family:'Noto Sans TC',sans-serif;background:#f8fafc;color:#4a6080;cursor:pointer;font-weight:500;text-align:center;min-height:46px}
+.counted-chip.on{background:rgba(26,127,212,.10);border-color:#1a7fd4;color:#1a7fd4;font-weight:700}
+.calc-preview{background:#f8fafc;border-radius:12px;padding:12px 14px;margin-bottom:14px;border:1px solid #e8eef4}
+.calc-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #e8eef4}
+.calc-row:last-child{border-bottom:none}
+.calc-k{font-size:.85rem;color:#4a6080}
+.calc-v{font-size:.9rem;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif;color:#1a2332}
+.calc-hl{background:rgba(26,127,212,.10);border-radius:6px;padding:7px 8px;margin:4px -8px}
+.calc-hl .calc-k{color:#1a7fd4;font-weight:700}
+.calc-hl .calc-v{color:#1a7fd4;font-size:1rem}
+.modal-actions{display:flex;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid #e8eef4}
+.btn-cancel{flex:1;padding:13px;border:1.5px solid #e8eef4;border-radius:12px;font-size:.97rem;font-family:'Noto Sans TC',sans-serif;background:#f8fafc;color:#4a6080;cursor:pointer;font-weight:500}
+.btn-save{flex:2;padding:13px;border:none;border-radius:12px;font-size:.97rem;font-family:'Noto Sans TC',sans-serif;background:#1a7fd4;color:white;cursor:pointer;font-weight:700}
+.btn-danger{flex:1;padding:13px;border:none;border-radius:12px;font-size:.97rem;font-family:'Noto Sans TC',sans-serif;background:rgba(220,38,38,.10);color:#dc2626;cursor:pointer;font-weight:700}
+.detail-field{display:block;padding:16px 0;border-bottom:1px solid #e8eef4}
+.detail-field:last-child{border-bottom:none}
+.detail-key{display:block;font-size:.78rem;font-weight:600;color:#8fa3b8;letter-spacing:.3px;margin-bottom:5px}
+.detail-val{display:block;font-size:1.05rem;color:#1a2332;font-weight:500;word-break:break-all}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:12px;color:#8fa3b8}
+.empty-icon{font-size:2.5rem}
+.load-msg{padding:40px;text-align:center;color:#8fa3b8;font-size:.95rem}
+
+.section-title-row{font-size:.95rem;font-weight:700;color:#3a5878;padding:10px 14px;background:#eaf0f8;border-bottom:2px solid #c8d8ec;display:block;min-width:100%;width:max-content;box-sizing:border-box}
+.section-title-row+table{margin-top:0}
+/* Section group header inside thead — same visual weight as yr-group-hdr */
+.frozen-1-table thead th.section-group-hdr{background:#dce8f8!important;color:#1a4070;font-size:.97rem;font-weight:700;padding:11px 14px;text-align:left;border-top:3px solid #b8cfe8;border-bottom:1px solid #c8d8ec;position:sticky;top:0;z-index:11}
+
+/* Tables flush left inside scroll containers */
+.frozen-table-wrap > table,
+.frozen-table-wrap > div > table { margin:0!important; }
+.frozen-table-wrap table { margin-left:0!important; }
+.scroll-content > table { margin:0!important; }
+/* frozen-1-table: ensure first column starts at absolute left edge */
+.frozen-1-table { margin:0; }
+
+/* Detail modal content padding */
+#oil-detail-content,#exp-detail-content,#data-detail-content{
+  padding:0 4px;
+}
+.modal-sheet .modal-title{
+  padding-left:4px;
+}

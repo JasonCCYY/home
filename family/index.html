@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>我們這一家</title>
+<link rel="manifest" href="/family/manifest.json">
+<meta name="theme-color" content="#e67e22">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/609/609803.png">
+<script src="https://cdn.jsdelivr.net/gh/6tail/lunar-javascript@master/lunar.js"></script>
+<style>
+:root{
+  --bg:#fdfaf5;--card:#fff;--pri:#e67e22;--pri-lt:#fff4ed;
+  --grn:#6d8c54;--brn:#5d4037;--brn-lt:#8d6e63;
+  --pink-bg:#fce4ec;--pink:#d81b60;
+  --r-lg:20px;--r-md:14px;--r-sm:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'PingFang TC','Microsoft JhengHei',sans-serif;-webkit-tap-highlight-color:transparent;font-weight:600;}
+body{background:var(--bg);color:var(--brn);min-height:100vh;font-size:18px;overscroll-behavior:none;}
+
+/* Lock */
+#lock{display:flex;align-items:center;justify-content:center;min-height:100svh;padding:1rem;}
+.lbox{background:#fff;border-radius:28px;padding:2.5rem 2rem;width:min(360px,100%);text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.08);}
+.lbox .ico{font-size:64px;margin-bottom:.5rem;}
+.lbox h1{font-size:24px;font-weight:800;margin-bottom:.3rem;}
+.lbox p{font-size:14px;color:var(--brn-lt);margin-bottom:1.5rem;font-weight:400;}
+
+/* App shell */
+#app{display:none;max-width:640px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom,0);}
+
+/* Header */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.1rem .7rem;position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid rgba(240,228,210,.7);}
+.hdr-l h1{font-size:23px;font-weight:800;letter-spacing:.3px;}
+.hdr-l .sub{font-size:14px;color:var(--brn-lt);margin-top:2px;font-weight:500;line-height:1.7;}
+.hdr-r{display:flex;align-items:center;gap:7px;}
+
+/* Home 跳轉按鈕 */
+.btn-home{display:flex;align-items:center;gap:5px;padding:6px 12px;background:#e6f1fb;border:1.5px solid #1a7fd4;border-radius:var(--r-sm);color:#1a7fd4;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s;flex-shrink:0;}
+.btn-home:active{background:#b5d4f4;}
+.btn-home svg{flex-shrink:0;}
+
+.fab{position:fixed;bottom:calc(28px + env(safe-area-inset-bottom,0));right:22px;width:58px;height:58px;border-radius:50%;background:var(--grn);color:#fff;border:none;font-size:28px;cursor:pointer;box-shadow:0 4px 16px rgba(109,140,84,.45);display:flex;align-items:center;justify-content:center;z-index:50;transition:transform .15s;}
+.fab:active{transform:scale(.9);}
+.ibt{width:38px;height:38px;border-radius:var(--r-sm);border:none;background:#eee8e0;color:var(--brn);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,transform .1s;flex-shrink:0;}
+.ibt:active{transform:scale(.9);}
+.ibt.on{background:var(--pri);color:#fff;}
+.ibt.spin svg{animation:rot .6s linear;}
+@keyframes rot{to{transform:rotate(360deg);}}
+.btn-out{background:none;border:1.5px solid #ddd;color:var(--brn-lt);padding:7px 11px;border-radius:var(--r-sm);font-size:13px;font-weight:700;cursor:pointer;}
+
+/* Search */
+#sbar{padding:0 1.1rem .7rem;display:none;}
+.swrap{position:relative;}
+.swrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.3;pointer-events:none;}
+#sinput{width:100%;padding:11px 40px 11px 40px;border:1.5px solid #e8e2d8;border-radius:var(--r-md);font-size:16px;outline:none;background:#fff;color:var(--brn);transition:border-color .2s;}
+#sinput:focus{border-color:var(--pri);}
+#sclear{display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;color:#bbb;padding:4px 6px;}
+
+/* Tabs */
+.tabs{display:flex;gap:8px;padding:.5rem 1.1rem;overflow-x:auto;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{padding:10px 20px;border-radius:50px;border:none;background:#ece7e0;font-size:16px;font-weight:700;color:var(--brn-lt);white-space:nowrap;cursor:pointer;transition:background .18s,color .18s;}
+.tab.active{background:var(--pri);color:#fff;}
+
+/* Cards */
+.lst{padding:.4rem 1.1rem 2rem;}
+.empty{text-align:center;padding:4rem 1rem;color:#ccc;font-size:15px;font-weight:400;}
+.card{background:var(--card);border-radius:var(--r-lg);padding:17px;margin-bottom:11px;box-shadow:0 2px 10px rgba(93,64,55,.06);border:1px solid rgba(240,226,208,.9);cursor:pointer;transition:transform .1s;}
+.card:active{transform:scale(.98);}
+.crow{display:flex;align-items:center;gap:13px;}
+.av{width:50px;height:50px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:19px;background:#fff5e9;color:var(--pri);flex-shrink:0;}
+.av.ann{background:var(--pink-bg);color:var(--pink);}
+.av.big{font-size:28px;}
+.ci{flex:1;min-width:0;}
+.ctop{display:flex;justify-content:space-between;align-items:center;gap:6px;}
+.cname{font-size:21px;font-weight:800;color:var(--brn);}
+.chip{font-size:15px;padding:5px 13px;border-radius:7px;background:#f1f5f9;color:#64748b;white-space:nowrap;flex-shrink:0;font-weight:700;}
+.chip.soon{background:var(--pri-lt);color:var(--pri);}
+.cev{font-size:16px;font-weight:700;color:var(--pri);margin-top:4px;}
+.cdt{font-size:16px;color:var(--brn-lt);margin-top:3px;line-height:1.55;font-weight:500;}
+
+/* Modal */
+.mbg{display:none;position:fixed;inset:0;background:rgba(50,30,20,.5);z-index:100;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+.mbg.open{display:flex;align-items:flex-end;justify-content:center;}
+@media(min-height:560px){.mbg.open{align-items:center;}}
+.modal{background:#fff;border-radius:28px 28px 0 0;width:100%;max-width:500px;max-height:94svh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,16px);}
+@media(min-height:560px){.modal{border-radius:28px;max-height:88svh;}}
+.mhdr{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 12px;border-bottom:1px solid #f5efea;}
+.mhdr h3{font-size:19px;font-weight:800;}
+.mx{background:none;border:none;font-size:24px;cursor:pointer;color:#ccc;padding:2px 6px;line-height:1;}
+.mbody{padding:8px 20px;}
+.fg{margin-bottom:11px;padding-bottom:11px;border-bottom:1px solid #fdf0e4;}
+.fg:last-child{border-bottom:none;}
+.fg label{display:block;font-size:14px;font-weight:700;color:var(--brn-lt);margin-bottom:5px;letter-spacing:.2px;}
+.fg input,.fg select{width:100%;padding:10px 12px;border:1.5px solid #eee;border-radius:var(--r-sm);font-size:19px;font-weight:600;background:#fdfaf6;color:var(--brn);outline:none;transition:border-color .2s;appearance:none;}
+.fg input:focus,.fg select:focus{border-color:var(--pri);}
+.fg.vm input,.fg.vm select{background:transparent;border-color:transparent;padding:4px 0;font-size:22px;font-weight:700;color:var(--brn) !important;-webkit-text-fill-color:var(--brn) !important;opacity:1 !important;}
+.fg.vm input::placeholder,.fg.vm select::placeholder{color:#ccc;}
+.fg.hid{display:none;}
+.mfoot{display:flex;gap:10px;padding:14px 20px 18px;}
+.bdel{flex:none;padding:13px 16px;border-radius:var(--r-md);font-size:15px;font-weight:700;border:2px solid #fecaca;background:#fff;color:#ef4444;cursor:pointer;}
+.bcan{flex:none;padding:13px 16px;border-radius:var(--r-md);font-size:15px;font-weight:700;background:#eee8e0;color:var(--brn-lt);border:none;cursor:pointer;}
+.bact{flex:1;padding:13px;border-radius:var(--r-md);font-size:16px;font-weight:800;background:var(--grn);color:#fff;border:none;cursor:pointer;transition:opacity .2s;}
+.bact:disabled{opacity:.6;}
+
+/* Toast */
+#toast{display:none;position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0));left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:11px 22px;border-radius:50px;font-size:15px;font-weight:700;z-index:999;white-space:nowrap;pointer-events:none;}
+</style>
+</head>
+<body>
+
+<!-- 登入失敗提示 -->
+<div id="lock">
+  <div class="lbox">
+    <div class="ico">🔒</div>
+    <h1>需要登入</h1>
+    <p>請先前往 Home App 登入 Google 帳號，再點選「Family」按鈕進入。</p>
+    <button onclick="window.location.href='/'" style="width:100%;padding:14px;background:#1a7fd4;color:#fff;border:none;border-radius:14px;font-size:17px;font-weight:700;cursor:pointer;">
+      前往 Home App 登入
+    </button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="hdr">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="btn-home" onclick="window.location.href='/'" title="回到記帳 App">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <line x1="12" y1="1" x2="12" y2="23"/>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+        Home
+      </button>
+      <div class="hdr-l">
+        <h1>我們這一家</h1>
+        <div class="sub" id="tstr"></div>
+      </div>
+    </div>
+    <div class="hdr-r">
+      <button class="ibt" id="rbtn" onclick="doRefresh()" title="重新整理">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+      </button>
+      <button class="ibt" id="sbtn" onclick="toggleSearch()" title="搜尋">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </button>
+      <button class="btn-out" onclick="logout()">登出</button>
+    </div>
+  </div>
+
+  <div id="sbar">
+    <div class="swrap">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="sinput" type="text" inputmode="search" placeholder="搜尋姓名、農曆、備註…" oninput="onSearch()">
+      <button id="sclear" onclick="clearSearch()">✕</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('upcoming')">即將到來</button>
+    <button class="tab" onclick="setTab('birthday')">生日</button>
+    <button class="tab" onclick="setTab('anniversary')">紀念日</button>
+    <button class="tab" onclick="setTab('custom')">其他</button>
+  </div>
+
+  <div id="swipe-container" style="position:relative;overflow:hidden;">
+    <div class="lst" id="l-upcoming"></div>
+    <div class="lst" id="l-birthday" style="display:none"></div>
+    <div class="lst" id="l-anniversary" style="display:none"></div>
+    <div class="lst" id="l-custom" style="display:none"></div>
+  </div>
+  <div class="lst" id="l-search" style="display:none"></div>
+</div>
+<button class="fab" onclick="openAdd()">＋</button>
+
+<div id="toast"></div>
+
+<div class="mbg" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="mhdr">
+      <h3 id="mtitle">新增紀錄</h3>
+      <button class="mx" onclick="closeModal()">×</button>
+    </div>
+    <div class="mbody">
+      <div class="fg" id="fg-name"><label>姓名 / 稱謂</label><input id="f-name" type="text" placeholder="例：媽媽"></div>
+      <div class="fg" id="fg-type"><label>類型</label>
+        <select id="f-type" onchange="onTypeChange()">
+          <option value="birthday_solar">🎂 生日</option>
+          <option value="anniversary">💍 結婚紀念日</option>
+          <option value="custom">📅 自訂紀念日</option>
+        </select>
+      </div>
+      <div class="fg"><label>日期（民國）</label><input id="f-roc" type="text" inputmode="numeric" placeholder="YYY/MM/DD" autocomplete="off"></div>
+      <input id="f-solar" type="hidden">
+      <div class="fg" id="fg-lunar"><label>農曆</label><input id="f-lunar" type="text" readonly placeholder="自動填入"></div>
+      <div class="fg" id="fg-zodiac"><label>生肖 / 星座</label><input id="f-zodiac" type="text" readonly placeholder="自動填入"></div>
+      <div class="fg" id="fg-btime"><label>生辰</label><input id="f-btime" type="text" placeholder="例：子時、08:30"></div>
+      <div class="fg"><label>備註</label><input id="f-remark" type="text" placeholder="選填"></div>
+    </div>
+    <div class="mfoot" id="mfoot-v" style="display:none">
+      <button class="bdel" onclick="doDelete()">刪除</button>
+      <button class="bcan" onclick="closeModal()">關閉</button>
+      <button class="bact" onclick="enableEdit()">✏️ 修改</button>
+    </div>
+    <div class="mfoot" id="mfoot-e">
+      <button class="bcan" onclick="closeModal()">取消</button>
+      <button class="bact" id="bsave" onclick="doSave()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// Google Sheets API（直接從瀏覽器呼叫，跟 Home 一樣）
+// ══════════════════════════════════════════
+const FAM = {
+  SHEET_ID: '1zybB2IyXPxSImHMZZ_d-aTG0oSFzWu2WBitmloJnyjY',
+  TAB:      'Jason',
+  BASE:     'https://sheets.googleapis.com/v4/spreadsheets',
+
+  // 從 sessionStorage 取 token（Home App 傳來的）
+  tok() {
+    return sessionStorage.getItem('fam_tok') || '';
+  },
+  hdrs() {
+    return { Authorization: `Bearer ${this.tok()}` };
+  },
+
+  // ── 讀取所有資料 ──
+  async read() {
+    const url = `${this.BASE}/${this.SHEET_ID}/values/${encodeURIComponent(this.TAB + '!A2:I1000')}`;
+    const r = await fetch(url, { headers: this.hdrs() });
+    if (!r.ok) {
+      if (r.status === 401) throw new Error('TOKEN_EXPIRED');
+      throw new Error(`讀取失敗(${r.status})`);
+    }
+    const rows = (await r.json()).values || [];
+    return rows.filter(r => r[0]).map(r => ({
+      id:        r[0] || '',
+      name:      r[1] || '',
+      type:      r[2] || 'birthday_solar',
+      date:      r[3] || '',
+      lunar:     r[4] || '',
+      remark:    r[5] || '',
+      birthTime: r[6] || '',
+      shengXiao: r[7] || '',
+      starSign:  r[8] || '',
+    }));
+  },
+
+  // ── 新增一列 ──
+  async append(row) {
+    const url = `${this.BASE}/${this.SHEET_ID}/values/${encodeURIComponent(this.TAB + '!A1')}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { ...this.hdrs(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [row] }),
+    });
+    if (!r.ok) {
+      if (r.status === 401) throw new Error('TOKEN_EXPIRED');
+      throw new Error(`新增失敗(${r.status})`);
+    }
+    return r.json();
+  },
+
+  // ── 更新指定列 ──
+  async update(rowNum, row) {
+    const range = `${this.TAB}!A${rowNum}:I${rowNum}`;
+    const url = `${this.BASE}/${this.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=RAW`;
+    const r = await fetch(url, {
+      method: 'PUT',
+      headers: { ...this.hdrs(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [row] }),
+    });
+    if (!r.ok) {
+      if (r.status === 401) throw new Error('TOKEN_EXPIRED');
+      throw new Error(`更新失敗(${r.status})`);
+    }
+    return r.json();
+  },
+
+  // ── 刪除一列（清空該列）──
+  async deleteRow(rowNum) {
+    const range = `${this.TAB}!A${rowNum}:I${rowNum}`;
+    const url = `${this.BASE}/${this.SHEET_ID}/values/${encodeURIComponent(range)}:clear`;
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { ...this.hdrs(), 'Content-Type': 'application/json' },
+    });
+    if (!r.ok) {
+      if (r.status === 401) throw new Error('TOKEN_EXPIRED');
+      throw new Error(`刪除失敗(${r.status})`);
+    }
+    return r.json();
+  },
+
+  // ── 找出某 ID 在第幾列（1-based，含 header）──
+  async findRowNum(id) {
+    const url = `${this.BASE}/${this.SHEET_ID}/values/${encodeURIComponent(this.TAB + '!A2:A1000')}`;
+    const r = await fetch(url, { headers: this.hdrs() });
+    if (!r.ok) throw new Error(`查詢失敗(${r.status})`);
+    const rows = (await r.json()).values || [];
+    const idx = rows.findIndex(r => r[0] === id);
+    if (idx === -1) throw new Error('找不到記錄');
+    return idx + 2; // +1 for 0-based, +1 for header row
+  },
+};
+
+// ══════════════════════════════════════════
+// App 狀態
+// ══════════════════════════════════════════
+let data = [], curId = null, curTab = 'upcoming';
+// 存 rowNum 對應 (id → rowNum) 避免每次操作都要重查
+let rowMap = new Map();
+const CACHE = 'fam_v4';
+const today = new Date();
+
+// ── Auth：從 URL 讀取 token，或從 sessionStorage 取回 ──
+(function checkAuth() {
+  const params = new URLSearchParams(window.location.search);
+  const tok = params.get('tok');
+  const exp = params.get('exp');
+
+  if (tok && exp) {
+    sessionStorage.setItem('fam_tok', tok);
+    sessionStorage.setItem('fam_exp', exp);
+    history.replaceState(null, '', '/family/');
+    showApp();
+    return;
+  }
+
+  const savedTok = sessionStorage.getItem('fam_tok');
+  const savedExp = sessionStorage.getItem('fam_exp');
+  if (savedTok && savedExp && Date.now() < parseInt(savedExp) - 60000) {
+    showApp();
+    return;
+  }
+
+  // 無效 → 顯示提示頁
+  document.getElementById('lock').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+})();
+
+function showApp() {
+  document.getElementById('lock').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  init();
+}
+
+function logout() {
+  sessionStorage.removeItem('fam_tok');
+  sessionStorage.removeItem('fam_exp');
+  window.location.href = '/';
+}
+
+// ── token 過期處理 ──
+function handleTokenExpired() {
+  toast('⚠️ 登入已過期，請重新從 Home App 進入');
+  setTimeout(() => { window.location.href = '/'; }, 2000);
+}
+
+// ══════════════════════════════════════════
+// Date utils
+// ══════════════════════════════════════════
+function rocToSolar(s) {
+  const v = s.replace(/\D/g, '');
+  if (v.length < 6) return null;
+  const ry = parseInt(v.slice(0, v.length - 4), 10), m = v.slice(-4, -2), d = v.slice(-2);
+  if (!ry || ry < 1 || ry > 200 || +m < 1 || +m > 12 || +d < 1 || +d > 31) return null;
+  return `${ry + 1911}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+}
+function rocToFull(s) {
+  if (!s) return '';
+  const p = s.split('-');
+  if (p[0].length === 4) return s;
+  return `${+p[0] + 1911}-${p[1]}-${p[2]}`;
+}
+function dispRoc(s) {
+  if (!s) return '';
+  const [y, m, d] = rocToFull(s).split('-').map(Number);
+  return `民國${y - 1911}年${m}月${d}日`;
+}
+
+// ── Info（農曆 / 生肖 / 星座）──
+function getInfo(ds) {
+  if (!ds) return { lunar: '', zodiac: '', lunarRaw: '', zodiacRaw: '', age: 0 };
+  const [y, m, d] = rocToFull(ds).split('-').map(Number);
+  let lu = '', zo = '', luR = '', zoR = '';
+  try {
+    const S = Solar.fromYmd(y, m, d), L = S.getLunar(), ly = L.getYear() - 1911;
+    luR = `農曆${ly}年${L.getMonthInChinese()}月${L.getDayInChinese()}`; lu = luR;
+    const zm = { '鼠': '鼠', '牛': '牛', '虎': '虎', '兔': '兔', '龙': '龍', '蛇': '蛇', '马': '馬', '羊': '羊', '猴': '猴', '鸡': '雞', '狗': '狗', '猪': '豬' };
+    const cnZ = zm[L.getYearShengXiao()] || L.getYearShengXiao();
+    const cuts = [20, 19, 21, 20, 21, 22, 23, 23, 23, 24, 23, 22];
+    const sigs = ['水瓶', '雙魚', '牡羊', '金牛', '雙子', '巨蟹', '獅子', '處女', '天秤', '天蠍', '射手', '摩羯'];
+    let si = m - 1; if (d < cuts[si]) si = (si + 11) % 12;
+    zoR = `${cnZ} / ${sigs[si]}座`; zo = zoR;
+  } catch (e) {}
+  let age = today.getFullYear() - y;
+  if (new Date(today.getFullYear(), today.getMonth(), today.getDate()) < new Date(today.getFullYear(), m - 1, d)) age--;
+  return { lunar: lu, zodiac: zo, lunarRaw: luR, zodiacRaw: zoR, age: Math.max(0, age) };
+}
+
+function cdStr(ds) {
+  const [, m, d] = rocToFull(ds).split('-').map(Number);
+  const now = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  let t = new Date(today.getFullYear(), m - 1, d);
+  if (t < now) t.setFullYear(today.getFullYear() + 1);
+  const tot = Math.ceil((t - now) / 86400000);
+  if (!tot) return '今天 🎉';
+  let tmp = new Date(now), mo = 0;
+  while (true) { const nx = new Date(tmp.getFullYear(), tmp.getMonth() + 1, tmp.getDate()); if (nx > t) break; tmp = nx; mo++; }
+  const dy = Math.round((t - tmp) / 86400000);
+  return (mo ? mo + '個月 ' : '') + (dy ? dy + '天' : '') || tot + '天';
+}
+
+// ══════════════════════════════════════════
+// Init / Load
+// ══════════════════════════════════════════
+async function init() {
+  const ts = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const i = getInfo(ts);
+  document.getElementById('tstr').innerHTML = dispRoc(ts) + (i.lunar ? '<br>' + i.lunar : '');
+  // 先顯示 cache
+  const c = localStorage.getItem(CACHE);
+  if (c) { data = JSON.parse(c); render(); }
+  setTimeout(load, 300);
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/family/sw.js').catch(() => {});
+}
+
+async function load() {
+  try {
+    data = await FAM.read();
+    // 建立 rowMap（id → sheet row number）
+    rowMap.clear();
+    data.forEach((e, i) => rowMap.set(e.id, i + 2)); // +2: 1-based + header
+    localStorage.setItem(CACHE, JSON.stringify(data));
+    render();
+    if (document.getElementById('l-search').style.display !== 'none') onSearch();
+  } catch (e) {
+    if (e.message === 'TOKEN_EXPIRED') { handleTokenExpired(); return; }
+    toast('⚠️ 無法連線，顯示暫存資料');
+  }
+}
+
+// ══════════════════════════════════════════
+// Render
+// ══════════════════════════════════════════
+function render() {
+  const now = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const tabs = { upcoming: null, birthday: ['birthday_solar'], anniversary: ['anniversary'], custom: ['custom'] };
+  Object.keys(tabs).forEach(tab => {
+    let list;
+    if (tab === 'upcoming') {
+      list = data.map(e => {
+        const [y, m, d] = rocToFull(e.date).split('-').map(Number);
+        let t = new Date(today.getFullYear(), m - 1, d);
+        if (t < now) t.setFullYear(today.getFullYear() + 1);
+        return { ...e, _d: Math.ceil((t - now) / 86400000), _n: t.getFullYear() - y };
+      }).sort((a, b) => a._d - b._d);
+    } else {
+      list = data.filter(e => tabs[tab].includes(e.type));
+    }
+    document.getElementById(`l-${tab}`).innerHTML = list.length ? list.map(e => cHTML(e, tab === 'upcoming')).join('') : '<div class="empty">尚無紀錄</div>';
+  });
+}
+
+function cHTML(e, up) {
+  const inf = getInfo(e.date);
+  const isAnn = e.type === 'anniversary', isBd = e.type === 'birthday_solar';
+  const lu = e.lunar || inf.lunar;
+  const zo = (e.shengXiao && e.starSign) ? `${e.shengXiao} / ${e.starSign}` : inf.zodiac;
+  const cd = up ? cdStr(e.date) : '';
+  const isT = cd === '今天 🎉';
+  const avcls = 'av' + (isAnn ? ' ann' : '') + (up && (isAnn || isBd) ? ' big' : '');
+  const avt = isAnn ? '💍' : (up && isBd ? '🎂' : e.name[0]);
+  let sub = '';
+  if (up) {
+    const ev = isBd ? `${e._n}歲生日` : isAnn ? `結婚${e._n}週年` : `第${e._n}週年`;
+    sub = `<div class="cev">${ev}</div><div class="cdt">${dispRoc(e.date)}</div>`;
+  } else if (isAnn) {
+    sub = `<div class="cdt" style="margin-top:4px">${dispRoc(e.date)} · 結婚 ${inf.age} 週年</div>`;
+  } else if (e.type === 'custom') {
+    sub = `<div class="cdt" style="margin-top:4px">${dispRoc(e.date)} · 第 ${inf.age} 週年</div>`;
+  } else {
+    sub = `<div class="cdt" style="margin-top:4px">${dispRoc(e.date)} · ${inf.age} 歲</div><div class="cdt">${lu}${zo ? ' · ' + zo : ''}</div>`;
+  }
+  return `<div class="card" onclick="view('${e.id}')">
+    <div class="crow">
+      <div class="${avcls}">${avt}</div>
+      <div class="ci">
+        <div class="ctop"><span class="cname">${e.name}</span>${up ? `<span class="chip${isT ? ' soon' : ''}">${isT ? cd : '剩 ' + cd}</span>` : ''}</div>
+        ${sub}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderSrch(q) {
+  const res = data.filter(e => e.name.includes(q) || (e.lunar || '').includes(q) || (e.remark || '').includes(q) || (e.shengXiao || '').includes(q) || (e.starSign || '').includes(q) || dispRoc(e.date).includes(q));
+  document.getElementById('l-search').innerHTML = res.length ? res.map(e => cHTML(e, false)).join('') : `<div class="empty">找不到「${q}」</div>`;
+}
+
+// ══════════════════════════════════════════
+// Tab / Search
+// ══════════════════════════════════════════
+const TAB_ORDER = ['upcoming', 'birthday', 'anniversary', 'custom'];
+function setTab(tab, dir = 0) {
+  curTab = tab;
+  const labels = { upcoming: '即將到來', birthday: '生日', anniversary: '紀念日', custom: '其他' };
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.textContent.trim() === labels[tab]));
+  if (dir !== 0) {
+    const incoming = document.getElementById(`l-${tab}`);
+    const dx = dir > 0 ? '100%' : '-100%';
+    const dx2 = dir > 0 ? '-100%' : '100%';
+    incoming.style.cssText = `position:absolute;top:0;left:0;width:100%;transform:translateX(${dx});`;
+    incoming.style.display = '';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const cur = document.querySelector('#swipe-container .lst:not([style*="none"]):not([style*="absolute"])');
+        if (cur && cur !== incoming) { cur.style.transition = 'transform .28s ease'; cur.style.transform = `translateX(${dx2})`; }
+        incoming.style.transition = 'transform .28s ease';
+        incoming.style.transform = 'translateX(0)';
+        setTimeout(() => {
+          ['upcoming', 'birthday', 'anniversary', 'custom'].forEach(t => {
+            const el = document.getElementById(`l-${t}`);
+            if (t === tab) { el.style.cssText = ''; } else { el.style.cssText = 'display:none'; }
+          });
+        }, 290);
+      });
+    });
+  } else {
+    ['upcoming', 'birthday', 'anniversary', 'custom'].forEach(t => document.getElementById(`l-${t}`).style.display = t === tab ? '' : 'none');
+  }
+  document.getElementById('l-search').style.display = 'none';
+}
+
+// Touch swipe
+(function () {
+  let sx = 0, sy = 0, swiping = false;
+  document.addEventListener('touchstart', e => {
+    if (e.target.closest('.mbg,.tabs,input,select,button')) return;
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; swiping = true;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (!swiping) return; swiping = false;
+    if (document.getElementById('l-search').style.display !== 'none') return;
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const idx = TAB_ORDER.indexOf(curTab);
+    if (dx < 0 && idx < TAB_ORDER.length - 1) setTab(TAB_ORDER[idx + 1], 1);
+    else if (dx > 0 && idx > 0) setTab(TAB_ORDER[idx - 1], -1);
+  }, { passive: true });
+})();
+
+let sOn = false;
+function toggleSearch() {
+  sOn = !sOn;
+  document.getElementById('sbar').style.display = sOn ? 'block' : 'none';
+  document.getElementById('sbtn').classList.toggle('on', sOn);
+  if (sOn) setTimeout(() => document.getElementById('sinput').focus(), 80);
+  else clearSearch();
+}
+function onSearch() {
+  const q = document.getElementById('sinput').value.trim();
+  document.getElementById('sclear').style.display = q ? 'block' : 'none';
+  if (q) {
+    renderSrch(q);
+    ['upcoming', 'birthday', 'anniversary', 'custom'].forEach(t => document.getElementById(`l-${t}`).style.display = 'none');
+    document.getElementById('l-search').style.display = '';
+  } else {
+    document.getElementById('l-search').style.display = 'none';
+    setTab(curTab);
+  }
+}
+function clearSearch() {
+  document.getElementById('sinput').value = '';
+  document.getElementById('sclear').style.display = 'none';
+  document.getElementById('l-search').style.display = 'none';
+  setTab(curTab);
+}
+
+// ══════════════════════════════════════════
+// Modal
+// ══════════════════════════════════════════
+function vmMode(on) {
+  document.querySelectorAll('.mbody .fg').forEach(f => { if (on) f.classList.add('vm'); else f.classList.remove('vm'); });
+  document.querySelectorAll('.mbody input:not(#f-solar),.mbody select').forEach(el => {
+    on ? (el.setAttribute('readonly', ''), el.setAttribute('disabled', '')) : (el.removeAttribute('readonly'), el.removeAttribute('disabled'));
+  });
+  if (!on) document.getElementById('f-type').removeAttribute('disabled');
+}
+function onTypeChange() {
+  const t = document.getElementById('f-type').value, bd = t === 'birthday_solar';
+  ['fg-lunar', 'fg-zodiac', 'fg-btime'].forEach(id => document.getElementById(id).classList.toggle('hid', !bd));
+}
+function openAdd() {
+  curId = null;
+  document.getElementById('mtitle').textContent = '新增紀錄';
+  document.querySelectorAll('.mbody input:not(#f-solar)').forEach(i => { i.value = ''; i.removeAttribute('readonly'); });
+  document.getElementById('f-solar').value = '';
+  document.getElementById('f-type').value = 'birthday_solar';
+  document.getElementById('f-type').removeAttribute('disabled');
+  vmMode(false); onTypeChange();
+  document.getElementById('mfoot-v').style.display = 'none';
+  document.getElementById('mfoot-e').style.display = 'flex';
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('f-name').focus(), 120);
+}
+function view(id) {
+  const e = data.find(x => x.id === id); if (!e) return;
+  curId = id;
+  const inf = getInfo(e.date);
+  document.getElementById('mtitle').textContent = e.name;
+  document.getElementById('f-name').value = e.name;
+  document.getElementById('f-type').value = e.type;
+  document.getElementById('f-roc').value = dispRoc(e.date);
+  document.getElementById('f-solar').value = e.date;
+  document.getElementById('f-lunar').value = e.lunar || inf.lunar;
+  document.getElementById('f-zodiac').value = (e.shengXiao && e.starSign) ? `${e.shengXiao} / ${e.starSign}` : inf.zodiac;
+  document.getElementById('f-btime').value = e.birthTime || '';
+  document.getElementById('f-remark').value = e.remark || '';
+  onTypeChange(); vmMode(true);
+  const hideIfEmpty = { 'fg-btime': e.birthTime, 'fg-remark': e.remark };
+  Object.entries(hideIfEmpty).forEach(([id, val]) => { document.getElementById(id).style.display = val ? '' : 'none'; });
+  document.getElementById('mfoot-v').style.display = 'flex';
+  document.getElementById('mfoot-e').style.display = 'none';
+  document.getElementById('modal').classList.add('open');
+}
+function enableEdit() {
+  document.getElementById('mtitle').textContent = '編輯紀錄';
+  vmMode(false);
+  ['fg-btime', 'fg-remark'].forEach(id => document.getElementById(id).style.display = '');
+  const solar = rocToFull(document.getElementById('f-solar').value);
+  const p = solar.split('-');
+  document.getElementById('f-roc').value = `${String(+p[0] - 1911).padStart(3, '0')}/${p[1]}/${p[2]}`;
+  document.getElementById('mfoot-v').style.display = 'none';
+  document.getElementById('mfoot-e').style.display = 'flex';
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+document.getElementById('f-roc').addEventListener('input', function () {
+  let v = this.value.replace(/\D/g, ''), f = v;
+  if (v.length > 3) f = v.slice(0, 3) + '/' + v.slice(3);
+  if (v.length > 5) f = v.slice(0, 3) + '/' + v.slice(3, 5) + '/' + v.slice(5, 7);
+  if (this.value !== f) this.value = f;
+  const s = rocToSolar(f);
+  if (s) {
+    document.getElementById('f-solar').value = s;
+    const i = getInfo(s);
+    document.getElementById('f-lunar').value = i.lunar;
+    document.getElementById('f-zodiac').value = i.zodiac;
+  }
+});
+
+// ══════════════════════════════════════════
+// Save / Delete（直接呼叫 Google Sheets API）
+// ══════════════════════════════════════════
+function buildRow(entry) {
+  // A=id, B=name, C=type, D=日期(民國), E=lunar, F=remark, G=birthTime, H=生肖, I=星座
+  const solar = rocToFull(entry.date) || entry.date;
+  const inf = getInfo(solar);
+  const [y, m, d] = solar.split('-');
+  const roc = `${String(+y - 1911).padStart(3, '0')}-${m}-${d}`;
+  return [
+    entry.id,
+    entry.name,
+    entry.type,
+    roc,
+    entry.type === 'birthday_solar' ? (entry.lunar || inf.lunarRaw) : '',
+    entry.remark || '',
+    entry.birthTime || '',
+    entry.type === 'birthday_solar' ? (entry.shengXiao || inf.zodiacRaw.split(' / ')[0] || '') : '',
+    entry.type === 'birthday_solar' ? (entry.starSign || inf.zodiacRaw.split(' / ')[1] || '') : '',
+  ];
+}
+
+async function doSave() {
+  const raw = document.getElementById('f-solar').value;
+  const solar = rocToFull(raw) || raw;
+  const type = document.getElementById('f-type').value;
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { toast('⚠️ 請填寫姓名'); return; }
+  if (!solar) { toast('⚠️ 請填寫日期'); return; }
+  const inf = getInfo(solar);
+  const entry = {
+    id: curId || String(Date.now()),
+    name, type, date: solar,
+    lunar: type === 'birthday_solar' ? inf.lunarRaw : '',
+    birthTime: document.getElementById('f-btime').value,
+    remark: document.getElementById('f-remark').value,
+    shengXiao: type === 'birthday_solar' ? inf.zodiacRaw.split(' / ')[0] : '',
+    starSign: type === 'birthday_solar' ? (inf.zodiacRaw.split(' / ')[1] || '') : '',
+  };
+  const btn = document.getElementById('bsave');
+  btn.disabled = true; btn.textContent = '儲存中…';
+  try {
+    const row = buildRow(entry);
+    if (curId) {
+      // 編輯：找到列號更新
+      const rowNum = rowMap.get(curId) || await FAM.findRowNum(curId);
+      await FAM.update(rowNum, row);
+    } else {
+      // 新增
+      await FAM.append(row);
+    }
+    await load(); closeModal(); toast('✅ 儲存成功');
+  } catch (e) {
+    if (e.message === 'TOKEN_EXPIRED') { handleTokenExpired(); return; }
+    toast('❌ 儲存失敗：' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '儲存';
+  }
+}
+
+async function doDelete() {
+  if (!confirm('確定刪除這筆紀錄？')) return;
+  try {
+    const rowNum = rowMap.get(curId) || await FAM.findRowNum(curId);
+    await FAM.deleteRow(rowNum);
+    rowMap.delete(curId);
+    await load(); closeModal(); toast('🗑 已刪除');
+  } catch (e) {
+    if (e.message === 'TOKEN_EXPIRED') { handleTokenExpired(); return; }
+    toast('❌ 刪除失敗：' + e.message);
+  }
+}
+
+// ── Refresh / Toast ──
+async function doRefresh() {
+  const b = document.getElementById('rbtn');
+  b.classList.add('spin'); b.disabled = true;
+  await load(); toast('✅ 已更新');
+  setTimeout(() => { b.classList.remove('spin'); b.disabled = false; }, 700);
+}
+function toast(msg, ms = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(t._t); t._t = setTimeout(() => t.style.display = 'none', ms);
+}
+</script>
+</body>
+</html>
