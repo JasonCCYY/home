@@ -6,9 +6,8 @@
 <title>我們這一家</title>
 <link rel="manifest" href="/family/manifest.json">
 <meta name="theme-color" content="#e67e22">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/609/609803.png">
 <script src="https://cdn.jsdelivr.net/gh/6tail/lunar-javascript@master/lunar.js"></script>
 <style>
@@ -86,8 +85,11 @@ body{background:var(--bg);color:var(--brn);min-height:100vh;font-size:18px;overs
 .mbg{display:none;position:fixed;inset:0;background:rgba(50,30,20,.5);z-index:100;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
 .mbg.open{display:flex;align-items:flex-end;justify-content:center;}
 @media(min-height:560px){.mbg.open{align-items:center;}}
-.modal{background:#fff;border-radius:28px 28px 0 0;width:100%;max-width:500px;max-height:94svh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,16px);}
+.modal{background:#fff;border-radius:28px 28px 0 0;width:100%;max-width:500px;max-height:94svh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,16px);touch-action:pan-y;transition:transform .3s cubic-bezier(.4,0,.2,1);}
 @media(min-height:560px){.modal{border-radius:28px;max-height:88svh;}}
+/* 下滑關閉拖曳把手 */
+.drag-handle{width:40px;height:5px;background:#e0d8d0;border-radius:3px;margin:12px auto 4px;cursor:grab;}
+.drag-handle:active{cursor:grabbing;}
 .mhdr{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 12px;border-bottom:1px solid #f5efea;}
 .mhdr h3{font-size:19px;font-weight:800;}
 .mx{background:none;border:none;font-size:24px;cursor:pointer;color:#ccc;padding:2px 6px;line-height:1;}
@@ -179,6 +181,7 @@ body{background:var(--bg);color:var(--brn);min-height:100vh;font-size:18px;overs
 
 <div class="mbg" id="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
+    <div class="drag-handle" id="drag-handle"></div>
     <div class="mhdr">
       <h3 id="mtitle">新增紀錄</h3>
       <button class="mx" onclick="closeModal()">×</button>
@@ -197,7 +200,7 @@ body{background:var(--bg);color:var(--brn);min-height:100vh;font-size:18px;overs
       <div class="fg" id="fg-lunar"><label>農曆</label><input id="f-lunar" type="text" readonly placeholder="自動填入"></div>
       <div class="fg" id="fg-zodiac"><label>生肖 / 星座</label><input id="f-zodiac" type="text" readonly placeholder="自動填入"></div>
       <div class="fg" id="fg-btime"><label>生辰</label><input id="f-btime" type="text" placeholder="例：子時、08:30"></div>
-      <div class="fg"><label>備註</label><input id="f-remark" type="text" placeholder="選填"></div>
+      <div class="fg" id="fg-remark"><label>備註</label><input id="f-remark" type="text" placeholder="選填"></div>
     </div>
     <div class="mfoot" id="mfoot-v" style="display:none">
       <button class="bdel" onclick="doDelete()">刪除</button>
@@ -640,7 +643,63 @@ function enableEdit() {
   document.getElementById('mfoot-v').style.display = 'none';
   document.getElementById('mfoot-e').style.display = 'flex';
 }
-function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function closeModal() {
+  const modal = document.getElementById('modal');
+  const sheet = modal.querySelector('.modal');
+  sheet.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1)';
+  sheet.style.transform = 'translateY(100%)';
+  setTimeout(() => {
+    modal.classList.remove('open');
+    sheet.style.transform = '';
+  }, 280);
+}
+
+// ── 下滑關閉 modal ──
+(function () {
+  const modal = document.getElementById('modal');
+  const sheet = modal.querySelector('.modal');
+  const handle = document.getElementById('drag-handle');
+  let startY = 0, currentY = 0, dragging = false;
+
+  function onStart(e) {
+    // 只從把手或 modal 頂部 60px 內觸發
+    const touch = e.touches ? e.touches[0] : e;
+    const sheetRect = sheet.getBoundingClientRect();
+    if (touch.clientY - sheetRect.top > 60 && e.target !== handle) return;
+    startY = touch.clientY;
+    dragging = true;
+    sheet.style.transition = 'none';
+  }
+
+  function onMove(e) {
+    if (!dragging) return;
+    const touch = e.touches ? e.touches[0] : e;
+    currentY = Math.max(0, touch.clientY - startY); // 只允許往下拖
+    sheet.style.transform = `translateY(${currentY}px)`;
+  }
+
+  function onEnd() {
+    if (!dragging) return;
+    dragging = false;
+    sheet.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1)';
+    if (currentY > 120) {
+      // 拖超過 120px → 關閉
+      closeModal();
+    } else {
+      // 彈回原位
+      sheet.style.transform = '';
+    }
+    currentY = 0;
+  }
+
+  handle.addEventListener('touchstart', onStart, { passive: true });
+  document.addEventListener('touchmove', onMove, { passive: true });
+  document.addEventListener('touchend', onEnd, { passive: true });
+  // 滑鼠也支援（桌面測試用）
+  handle.addEventListener('mousedown', onStart);
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onEnd);
+})();
 
 document.getElementById('f-roc').addEventListener('input', function () {
   let v = this.value.replace(/\D/g, ''), f = v;
