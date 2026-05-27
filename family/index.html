@@ -201,6 +201,15 @@ body{background:var(--bg);color:var(--brn);min-height:100vh;font-size:18px;overs
       <div class="fg" id="fg-zodiac"><label>生肖 / 星座</label><input id="f-zodiac" type="text" readonly placeholder="自動填入"></div>
       <div class="fg" id="fg-btime"><label>生辰</label><input id="f-btime" type="text" placeholder="例：子時、08:30"></div>
       <div class="fg" id="fg-remark"><label>備註</label><input id="f-remark" type="text" placeholder="選填"></div>
+      <div class="fg" id="fg-blood"><label>血型</label>
+        <select id="f-blood">
+          <option value="">（未填）</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="O">O</option>
+          <option value="AB">AB</option>
+        </select>
+      </div>
     </div>
     <div class="mfoot" id="mfoot-v" style="display:none">
       <button class="bdel" onclick="doDelete()">刪除</button>
@@ -233,7 +242,7 @@ const FAM = {
 
   // ── 讀取所有資料 ──
   async read() {
-    const url = `${this.BASE}/${this.SHEET_ID}/values/${encodeURIComponent(this.TAB + '!A2:I1000')}`;
+    const url = `${this.BASE}/${this.SHEET_ID}/values/${encodeURIComponent(this.TAB + '!A2:J1000')}`;
     const r = await fetch(url, { headers: this.hdrs() });
     if (!r.ok) {
       if (r.status === 401) throw new Error('TOKEN_EXPIRED');
@@ -250,6 +259,7 @@ const FAM = {
       birthTime: r[6] || '',
       shengXiao: r[7] || '',
       starSign:  r[8] || '',
+      bloodType: r[9] || '',
     }));
   },
 
@@ -488,7 +498,8 @@ function cHTML(e, up) {
   } else if (e.type === 'custom') {
     sub = `<div class="cdt" style="margin-top:4px">${dispRoc(e.date)} · 第 ${inf.age} 週年</div>`;
   } else {
-    sub = `<div class="cdt" style="margin-top:4px">${dispRoc(e.date)} · ${inf.age} 歲</div><div class="cdt">${lu}${zo ? ' · ' + zo : ''}</div>`;
+    const bt = e.bloodType ? ' · ' + e.bloodType + '型' : '';
+    sub = `<div class="cdt" style="margin-top:4px">${dispRoc(e.date)} · ${inf.age} 歲${bt}</div><div class="cdt">${lu}${zo ? ' · ' + zo : ''}</div>`;
   }
   return `<div class="card" onclick="view('${e.id}')">
     <div class="crow">
@@ -598,12 +609,13 @@ function vmMode(on) {
 }
 function onTypeChange() {
   const t = document.getElementById('f-type').value, bd = t === 'birthday_solar';
-  ['fg-lunar', 'fg-zodiac', 'fg-btime'].forEach(id => document.getElementById(id).classList.toggle('hid', !bd));
+  ['fg-lunar', 'fg-zodiac', 'fg-btime', 'fg-blood'].forEach(id => document.getElementById(id).classList.toggle('hid', !bd));
 }
 function openAdd() {
   curId = null;
   document.getElementById('mtitle').textContent = '新增紀錄';
   document.querySelectorAll('.mbody input:not(#f-solar)').forEach(i => { i.value = ''; i.removeAttribute('readonly'); });
+  document.getElementById('f-blood').value = '';
   document.getElementById('f-solar').value = '';
   document.getElementById('f-type').value = 'birthday_solar';
   document.getElementById('f-type').removeAttribute('disabled');
@@ -626,8 +638,9 @@ function view(id) {
   document.getElementById('f-zodiac').value = (e.shengXiao && e.starSign) ? `${e.shengXiao} / ${e.starSign}` : inf.zodiac;
   document.getElementById('f-btime').value = e.birthTime || '';
   document.getElementById('f-remark').value = e.remark || '';
+  document.getElementById('f-blood').value = e.bloodType || '';
   onTypeChange(); vmMode(true);
-  const hideIfEmpty = { 'fg-btime': e.birthTime, 'fg-remark': e.remark };
+  const hideIfEmpty = { 'fg-btime': e.birthTime, 'fg-remark': e.remark, 'fg-blood': e.bloodType };
   Object.entries(hideIfEmpty).forEach(([id, val]) => { document.getElementById(id).style.display = val ? '' : 'none'; });
   document.getElementById('mfoot-v').style.display = 'flex';
   document.getElementById('mfoot-e').style.display = 'none';
@@ -636,7 +649,7 @@ function view(id) {
 function enableEdit() {
   document.getElementById('mtitle').textContent = '編輯紀錄';
   vmMode(false);
-  ['fg-btime', 'fg-remark'].forEach(id => document.getElementById(id).style.display = '');
+  ['fg-btime', 'fg-remark', 'fg-blood'].forEach(id => document.getElementById(id).style.display = '');
   const solar = rocToFull(document.getElementById('f-solar').value);
   const p = solar.split('-');
   document.getElementById('f-roc').value = `${String(+p[0] - 1911).padStart(3, '0')}/${p[1]}/${p[2]}`;
@@ -654,51 +667,54 @@ function closeModal() {
   }, 280);
 }
 
-// ── 下滑關閉 modal ──
+// ── 下滑關閉 modal（只在 modal 開啟時作用，不影響主頁滑動）──
 (function () {
-  const modal = document.getElementById('modal');
-  const sheet = modal.querySelector('.modal');
-  const handle = document.getElementById('drag-handle');
+  const modalBg = document.getElementById('modal');
+  const sheet   = modalBg.querySelector('.modal');
+  const handle  = document.getElementById('drag-handle');
   let startY = 0, currentY = 0, dragging = false;
 
+  function isOpen() { return modalBg.classList.contains('open'); }
+
   function onStart(e) {
-    // 只從把手或 modal 頂部 60px 內觸發
+    if (!isOpen()) return;
     const touch = e.touches ? e.touches[0] : e;
-    const sheetRect = sheet.getBoundingClientRect();
-    if (touch.clientY - sheetRect.top > 60 && e.target !== handle) return;
+    // 只從把手觸發，避免干擾主頁
+    if (e.target !== handle && !handle.contains(e.target)) return;
     startY = touch.clientY;
+    currentY = 0;
     dragging = true;
     sheet.style.transition = 'none';
+    e.stopPropagation();
   }
 
   function onMove(e) {
     if (!dragging) return;
     const touch = e.touches ? e.touches[0] : e;
-    currentY = Math.max(0, touch.clientY - startY); // 只允許往下拖
+    currentY = Math.max(0, touch.clientY - startY);
     sheet.style.transform = `translateY(${currentY}px)`;
+    e.stopPropagation();
   }
 
   function onEnd() {
     if (!dragging) return;
     dragging = false;
     sheet.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1)';
-    if (currentY > 120) {
-      // 拖超過 120px → 關閉
+    if (currentY > 100) {
       closeModal();
     } else {
-      // 彈回原位
       sheet.style.transform = '';
     }
     currentY = 0;
   }
 
-  handle.addEventListener('touchstart', onStart, { passive: true });
-  document.addEventListener('touchmove', onMove, { passive: true });
-  document.addEventListener('touchend', onEnd, { passive: true });
-  // 滑鼠也支援（桌面測試用）
-  handle.addEventListener('mousedown', onStart);
-  document.addEventListener('mousemove', onMove);
-  document.addEventListener('mouseup', onEnd);
+  // 只綁在 handle 上，完全不影響主頁
+  handle.addEventListener('touchstart', onStart, { passive: false });
+  handle.addEventListener('touchmove',  onMove,  { passive: false });
+  handle.addEventListener('touchend',   onEnd,   { passive: true  });
+  handle.addEventListener('mousedown',  onStart);
+  document.addEventListener('mousemove', e => { if (dragging) onMove(e); });
+  document.addEventListener('mouseup',   e => { if (dragging) onEnd();   });
 })();
 
 document.getElementById('f-roc').addEventListener('input', function () {
@@ -734,6 +750,7 @@ function buildRow(entry) {
     entry.birthTime || '',
     entry.type === 'birthday_solar' ? (entry.shengXiao || inf.zodiacRaw.split(' / ')[0] || '') : '',
     entry.type === 'birthday_solar' ? (entry.starSign || inf.zodiacRaw.split(' / ')[1] || '') : '',
+    entry.type === 'birthday_solar' ? (entry.bloodType || '') : '',
   ];
 }
 
@@ -753,6 +770,7 @@ async function doSave() {
     remark: document.getElementById('f-remark').value,
     shengXiao: type === 'birthday_solar' ? inf.zodiacRaw.split(' / ')[0] : '',
     starSign: type === 'birthday_solar' ? (inf.zodiacRaw.split(' / ')[1] || '') : '',
+    bloodType: type === 'birthday_solar' ? (document.getElementById('f-blood').value || '') : '',
   };
   const btn = document.getElementById('bsave');
   btn.disabled = true; btn.textContent = '儲存中…';
