@@ -296,13 +296,31 @@ const FAM = {
     return r.json();
   },
 
-  // ── 刪除一列（清空該列）──
+  // ── 真正刪除一列（用 batchUpdate deleteDimension）──
   async deleteRow(rowNum) {
-    const range = `${this.TAB}!A${rowNum}:I${rowNum}`;
-    const url = `${this.BASE}/${this.SHEET_ID}/values/${encodeURIComponent(range)}:clear`;
+    // 先取得 sheetId（Jason 分頁的 gid）
+    const metaUrl = `${this.BASE}/${this.SHEET_ID}?fields=sheets.properties`;
+    const metaR = await fetch(metaUrl, { headers: this.hdrs() });
+    if (!metaR.ok) throw new Error(`取得 sheetId 失敗(${metaR.status})`);
+    const meta = await metaR.json();
+    const sheetId = (meta.sheets || []).find(s => s.properties.title === this.TAB)?.properties.sheetId ?? 0;
+
+    const url = `${this.BASE}/${this.SHEET_ID}:batchUpdate`;
     const r = await fetch(url, {
       method: 'POST',
       headers: { ...this.hdrs(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [{
+          deleteDimension: {
+            range: {
+              sheetId,
+              dimension: 'ROWS',
+              startIndex: rowNum - 1, // 0-based
+              endIndex: rowNum,       // exclusive
+            }
+          }
+        }]
+      }),
     });
     if (!r.ok) {
       if (r.status === 401) throw new Error('TOKEN_EXPIRED');
@@ -800,10 +818,14 @@ async function doDelete() {
   try {
     const rowNum = rowMap.get(curId) || await FAM.findRowNum(curId);
     await FAM.deleteRow(rowNum);
+    // 馬上從本地移除，畫面即時更新，不等 load()
+    data = data.filter(e => e.id !== curId);
+    localStorage.setItem('fam_v4', JSON.stringify(data));
     rowMap.delete(curId);
+    render();
     closeModal();
     toast('🗑 已刪除');
-    await load();
+    await load(); // 背景再同步一次確保準確
   } catch (e) {
     if (e.message === 'TOKEN_EXPIRED') { handleTokenExpired(); return; }
     toast('❌ 刪除失敗：' + e.message);
