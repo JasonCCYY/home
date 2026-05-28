@@ -88,8 +88,10 @@ body{background:var(--bg);color:var(--brn);min-height:100vh;font-size:18px;overs
 .modal{background:#fff;border-radius:28px 28px 0 0;width:100%;max-width:500px;max-height:94svh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,16px);touch-action:pan-y;transition:transform .3s cubic-bezier(.4,0,.2,1);}
 @media(min-height:560px){.modal{border-radius:28px;max-height:88svh;}}
 /* 下滑關閉拖曳把手 */
-.drag-handle{width:40px;height:5px;background:#e0d8d0;border-radius:3px;margin:12px auto 4px;cursor:grab;}
-.drag-handle:active{cursor:grabbing;}
+.drag-handle{width:60px;height:5px;background:#e0d8d0;border-radius:3px;margin:0 auto;cursor:grab;position:relative;}
+.drag-handle::before{content:'';position:absolute;top:-14px;left:-30px;right:-30px;bottom:-14px;} /* 擴大觸控區 */
+.drag-handle:active{cursor:grabbing;background:#c8bfb5;}
+.drag-wrap{padding:16px 0 4px;text-align:center;cursor:grab;} /* 整個頂部都可拖 */
 .mhdr{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 12px;border-bottom:1px solid #f5efea;}
 .mhdr h3{font-size:19px;font-weight:800;}
 .mx{background:none;border:none;font-size:24px;cursor:pointer;color:#ccc;padding:2px 6px;line-height:1;}
@@ -181,7 +183,7 @@ body{background:var(--bg);color:var(--brn);min-height:100vh;font-size:18px;overs
 
 <div class="mbg" id="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
-    <div class="drag-handle" id="drag-handle"></div>
+    <div class="drag-wrap" id="drag-wrap"><div class="drag-handle" id="drag-handle"></div></div>
     <div class="mhdr">
       <h3 id="mtitle">新增紀錄</h3>
       <button class="mx" onclick="closeModal()">×</button>
@@ -623,6 +625,7 @@ function openAdd() {
   document.getElementById('mfoot-v').style.display = 'none';
   document.getElementById('mfoot-e').style.display = 'flex';
   document.getElementById('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';  // 鎖定 body 滾動
   setTimeout(() => document.getElementById('f-name').focus(), 120);
 }
 function view(id) {
@@ -645,6 +648,7 @@ function view(id) {
   document.getElementById('mfoot-v').style.display = 'flex';
   document.getElementById('mfoot-e').style.display = 'none';
   document.getElementById('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';  // 鎖定 body 滾動
 }
 function enableEdit() {
   document.getElementById('mtitle').textContent = '編輯紀錄';
@@ -659,19 +663,21 @@ function enableEdit() {
 function closeModal() {
   const modal = document.getElementById('modal');
   const sheet = modal.querySelector('.modal');
-  sheet.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1)';
-  sheet.style.transform = 'translateY(100%)';
+  sheet.style.transition = 'transform .28s cubic-bezier(.4,0,.2,1)';
+  sheet.style.transform = 'translateY(110%)';
   setTimeout(() => {
     modal.classList.remove('open');
+    sheet.style.transition = '';
     sheet.style.transform = '';
-  }, 280);
+    document.body.style.overflow = '';  // 解鎖 body 滾動
+  }, 290);
 }
 
 // ── 下滑關閉 modal（只在 modal 開啟時作用，不影響主頁滑動）──
 (function () {
   const modalBg = document.getElementById('modal');
   const sheet   = modalBg.querySelector('.modal');
-  const handle  = document.getElementById('drag-handle');
+  const wrap    = document.getElementById('drag-wrap');
   let startY = 0, currentY = 0, dragging = false;
 
   function isOpen() { return modalBg.classList.contains('open'); }
@@ -679,13 +685,10 @@ function closeModal() {
   function onStart(e) {
     if (!isOpen()) return;
     const touch = e.touches ? e.touches[0] : e;
-    // 只從把手觸發，避免干擾主頁
-    if (e.target !== handle && !handle.contains(e.target)) return;
     startY = touch.clientY;
     currentY = 0;
     dragging = true;
     sheet.style.transition = 'none';
-    e.stopPropagation();
   }
 
   function onMove(e) {
@@ -693,14 +696,14 @@ function closeModal() {
     const touch = e.touches ? e.touches[0] : e;
     currentY = Math.max(0, touch.clientY - startY);
     sheet.style.transform = `translateY(${currentY}px)`;
-    e.stopPropagation();
+    if (currentY > 5) e.preventDefault();
   }
 
   function onEnd() {
     if (!dragging) return;
     dragging = false;
-    sheet.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1)';
-    if (currentY > 100) {
+    sheet.style.transition = 'transform .28s cubic-bezier(.4,0,.2,1)';
+    if (currentY > 80) {
       closeModal();
     } else {
       sheet.style.transform = '';
@@ -708,11 +711,10 @@ function closeModal() {
     currentY = 0;
   }
 
-  // 只綁在 handle 上，完全不影響主頁
-  handle.addEventListener('touchstart', onStart, { passive: false });
-  handle.addEventListener('touchmove',  onMove,  { passive: false });
-  handle.addEventListener('touchend',   onEnd,   { passive: true  });
-  handle.addEventListener('mousedown',  onStart);
+  wrap.addEventListener('touchstart', onStart, { passive: true });
+  wrap.addEventListener('touchmove',  onMove,  { passive: false });
+  wrap.addEventListener('touchend',   onEnd,   { passive: true });
+  wrap.addEventListener('mousedown',  onStart);
   document.addEventListener('mousemove', e => { if (dragging) onMove(e); });
   document.addEventListener('mouseup',   e => { if (dragging) onEnd();   });
 })();
@@ -784,7 +786,9 @@ async function doSave() {
       // 新增
       await FAM.append(row);
     }
-    await load(); closeModal(); toast('✅ 儲存成功');
+    closeModal();
+    toast('✅ 儲存成功');
+    await load(); // 重新讀 Sheet，畫面即時更新
   } catch (e) {
     if (e.message === 'TOKEN_EXPIRED') { handleTokenExpired(); return; }
     toast('❌ 儲存失敗：' + e.message);
@@ -799,7 +803,9 @@ async function doDelete() {
     const rowNum = rowMap.get(curId) || await FAM.findRowNum(curId);
     await FAM.deleteRow(rowNum);
     rowMap.delete(curId);
-    await load(); closeModal(); toast('🗑 已刪除');
+    closeModal();
+    toast('🗑 已刪除');
+    await load();
   } catch (e) {
     if (e.message === 'TOKEN_EXPIRED') { handleTokenExpired(); return; }
     toast('❌ 刪除失敗：' + e.message);
