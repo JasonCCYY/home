@@ -829,14 +829,15 @@ async function doDelete() {
   try {
     const rowNum = rowMap.get(curId) || await FAM.findRowNum(curId);
     await FAM.deleteRow(rowNum);
-    // 馬上從本地移除，畫面即時更新，不等 load()
+    // 馬上從本地移除，畫面即時更新
     data = data.filter(e => e.id !== curId);
     localStorage.setItem('fam_v4', JSON.stringify(data));
     rowMap.delete(curId);
     render();
     closeModal();
     toast('🗑 已刪除');
-    await load(); // 背景再同步一次確保準確
+    // 延遲 2.5 秒再 load()，給 Sheet API 時間反映刪除
+    setTimeout(() => load(), 2500);
   } catch (e) {
     if (e.message === 'TOKEN_EXPIRED') { handleTokenExpired(); return; }
     toast('❌ 刪除失敗：' + e.message);
