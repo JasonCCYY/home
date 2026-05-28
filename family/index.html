@@ -802,9 +802,20 @@ async function doSave() {
       // 新增
       await FAM.append(row);
     }
+    // 馬上更新本地 data，畫面即時顯示
+    if (curId) {
+      // 編輯：替換舊資料
+      const idx = data.findIndex(e => e.id === curId);
+      if (idx !== -1) data[idx] = entry;
+    } else {
+      // 新增：加到最後
+      data.push(entry);
+    }
+    localStorage.setItem('fam_v4', JSON.stringify(data));
+    render();
     closeModal();
     toast('✅ 儲存成功');
-    await load(); // 重新讀 Sheet，畫面即時更新
+    setTimeout(() => load(), 1500); // 背景延遲同步 Sheet
   } catch (e) {
     if (e.message === 'TOKEN_EXPIRED') { handleTokenExpired(); return; }
     toast('❌ 儲存失敗：' + e.message);
