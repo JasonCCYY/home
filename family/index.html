@@ -673,33 +673,38 @@ function closeModal() {
   }, 290);
 }
 
-// ── 下滑關閉 modal（只在 modal 開啟時作用，不影響主頁滑動）──
+// ── 下滑關閉 modal ──
 (function () {
   const modalBg = document.getElementById('modal');
   const sheet   = modalBg.querySelector('.modal');
-  const wrap    = document.getElementById('drag-wrap');
-  let startY = 0, currentY = 0, dragging = false;
+  let startY = 0, startScrollTop = 0, currentY = 0, dragging = false;
 
   function isOpen() { return modalBg.classList.contains('open'); }
 
-  function onStart(e) {
+  modalBg.addEventListener('touchstart', function(e) {
     if (!isOpen()) return;
-    const touch = e.touches ? e.touches[0] : e;
-    startY = touch.clientY;
+    startY = e.touches[0].clientY;
+    startScrollTop = sheet.scrollTop;
     currentY = 0;
     dragging = true;
     sheet.style.transition = 'none';
-  }
+  }, { passive: true });
 
-  function onMove(e) {
+  modalBg.addEventListener('touchmove', function(e) {
     if (!dragging) return;
-    const touch = e.touches ? e.touches[0] : e;
-    currentY = Math.max(0, touch.clientY - startY);
-    sheet.style.transform = `translateY(${currentY}px)`;
-    if (currentY > 5) e.preventDefault();
-  }
+    const dy = e.touches[0].clientY - startY;
+    // 只有在 sheet 已滾到頂部、且往下拖才攔截
+    if (sheet.scrollTop <= 0 && dy > 0) {
+      currentY = dy;
+      sheet.style.transform = `translateY(${currentY}px)`;
+      e.preventDefault(); // 阻止頁面滾動
+    } else {
+      currentY = 0;
+      sheet.style.transform = '';
+    }
+  }, { passive: false });
 
-  function onEnd() {
+  modalBg.addEventListener('touchend', function() {
     if (!dragging) return;
     dragging = false;
     sheet.style.transition = 'transform .28s cubic-bezier(.4,0,.2,1)';
@@ -709,14 +714,7 @@ function closeModal() {
       sheet.style.transform = '';
     }
     currentY = 0;
-  }
-
-  wrap.addEventListener('touchstart', onStart, { passive: true });
-  wrap.addEventListener('touchmove',  onMove,  { passive: false });
-  wrap.addEventListener('touchend',   onEnd,   { passive: true });
-  wrap.addEventListener('mousedown',  onStart);
-  document.addEventListener('mousemove', e => { if (dragging) onMove(e); });
-  document.addEventListener('mouseup',   e => { if (dragging) onEnd();   });
+  }, { passive: true });
 })();
 
 document.getElementById('f-roc').addEventListener('input', function () {
