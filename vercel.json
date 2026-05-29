@@ -1,15 +1,18 @@
 {
   "rewrites": [
-    { "source": "/api/oauth",            "destination": "/api/oauth.js" },
-    { "source": "/api/refresh",          "destination": "/api/refresh.js" },
-    { "source": "/family/sw.js",         "destination": "/family/sw.js" },
-    { "source": "/family/manifest.json", "destination": "/family/manifest.json" },
-    { "source": "/family/(.*)",          "destination": "/family/index.html" },
-    { "source": "/sw.js",                "destination": "/home/sw.js" },
-    { "source": "/manifest.json",        "destination": "/home/manifest.json" },
-    { "source": "/icons/(.*)",           "destination": "/home/icons/$1" },
-    { "source": "/css/(.*)",             "destination": "/home/css/$1" },
-    { "source": "/js/(.*)",              "destination": "/home/js/$1" },
-    { "source": "/(.*)",                 "destination": "/home/index.html" }
+    { "source": "/api/oauth",             "destination": "/api/oauth.js" },
+    { "source": "/api/refresh",           "destination": "/api/refresh.js" },
+    { "source": "/family/sw.js",          "destination": "/family/sw.js" },
+    { "source": "/family/manifest.json",  "destination": "/family/manifest.json" },
+    { "source": "/family/api/:path*",     "destination": "/family/api/:path*" },
+    { "source": "/family/:path*",         "destination": "/family/index.html" },
+    { "source": "/home/:path*",           "destination": "/home/:path*" },
+    { "source": "/sw.js",                 "destination": "/home/sw.js" },
+    { "source": "/manifest.json",         "destination": "/home/manifest.json" },
+    { "source": "/icons/:path*",          "destination": "/home/icons/:path*" },
+    { "source": "/css/:path*",            "destination": "/home/css/:path*" },
+    { "source": "/js/:path*",             "destination": "/home/js/:path*" },
+    { "source": "/auth/callback",         "destination": "/home/index.html" },
+    { "source": "/(.*)",                  "destination": "/home/index.html" }
   ]
 }

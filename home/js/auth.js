@@ -13,8 +13,11 @@ const AUTH = {
     const ok = await this._silentRefresh();
     if (ok) {
       APP.onAuthSuccess();
+    } else {
+      // 沒有 refresh token 或刷新失敗 → 隱藏 loading，顯示登入畫面
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('auth-screen').style.display = '';
     }
-    // 沒有 refresh token → 顯示登入畫面（等用戶點登入）
   },
 
   // ══════════════════════════════════════════
