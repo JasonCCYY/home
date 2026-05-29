@@ -1,5 +1,7 @@
 {
   "rewrites": [
+    { "source": "/api/oauth",            "destination": "/api/oauth.js" },
+    { "source": "/api/refresh",          "destination": "/api/refresh.js" },
     { "source": "/family/sw.js",         "destination": "/family/sw.js" },
     { "source": "/family/manifest.json", "destination": "/family/manifest.json" },
     { "source": "/family/(.*)",          "destination": "/family/index.html" },

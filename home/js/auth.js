@@ -1,102 +1,161 @@
 const AUTH = {
   CLIENT_ID: '819164879021-10qcb700t7vpt5l1qhff7id63pkfve9e.apps.googleusercontent.com',
   SCOPES: 'https://www.googleapis.com/auth/spreadsheets',
-  tokenClient: null,
   accessToken: null,
+  _refreshTimer: null,
   _refreshing: false,
-  _lastExpired: 0,
 
+  // ══════════════════════════════════════════
+  // 初始化：優先用 refresh token 靜默登入
+  // ══════════════════════════════════════════
   async init() {
-    return new Promise(resolve => {
-      const s = document.createElement('script');
-      s.src = 'https://accounts.google.com/gsi/client';
-      s.onload = () => {
-        this.tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: this.CLIENT_ID,
-          scope: this.SCOPES,
-          callback: resp => {
-            if (resp.error) { console.error(resp); return; }
-            const isFirstLogin = !this.accessToken;
-            this.accessToken = resp.access_token;
-            this._save(resp);
-            this._scheduleRefresh(resp.expires_in * 1000);
-            this._refreshing = false;
-            if (isFirstLogin) {
-              APP.onAuthSuccess();
-            } else {
-              APP.refresh();
-            }
-          }
-        });
-        this._bindVisibility();
-        const saved = this._load();
-        if (saved) {
-          this.accessToken = saved;
-          const d = JSON.parse(localStorage.getItem('home_tok') || 'null');
-          if (d) this._scheduleRefresh(d.exp - Date.now());
-          APP.onAuthSuccess();
-        }
-        resolve();
-      };
-      s.onerror = () => resolve();
-      document.head.appendChild(s);
-    });
+    this._bindVisibility();
+    const ok = await this._silentRefresh();
+    if (ok) {
+      APP.onAuthSuccess();
+    }
+    // 沒有 refresh token → 顯示登入畫面（等用戶點登入）
   },
 
+  // ══════════════════════════════════════════
+  // 用戶點「Google 登入」→ Authorization Code flow
+  // ══════════════════════════════════════════
+  signIn() {
+    // 產生隨機 state，存 sessionStorage，防止 CSRF
+    const state = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    sessionStorage.setItem('oauth_state', state);
+    const params = new URLSearchParams({
+      client_id:     this.CLIENT_ID,
+      redirect_uri:  window.location.origin + '/auth/callback',
+      response_type: 'code',
+      scope:         this.SCOPES + ' openid email',
+      access_type:   'offline',
+      prompt:        'consent',
+      state,
+    });
+    window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
+  },
+
+  // ══════════════════════════════════════════
+  // 處理 Google 回調（授權碼換 token）
+  // ══════════════════════════════════════════
+  async handleCallback() {
+    const params = new URLSearchParams(window.location.search);
+    const code  = params.get('code');
+    const state = params.get('state');
+    const error = params.get('error');
+    if (error || !code) { window.location.href = '/'; return; }
+
+    // 驗證 state 防 CSRF
+    const savedState = sessionStorage.getItem('oauth_state');
+    sessionStorage.removeItem('oauth_state');
+    if (!savedState || savedState !== state) {
+      console.error('OAuth state mismatch');
+      window.location.href = '/';
+      return;
+    }
+
+    try {
+      const r = await fetch('/api/oauth', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ code }), // 不傳 redirect_uri，後端自己組
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      this.accessToken = data.access_token;
+      this._saveAccess(data.access_token, data.expires_in);
+      this._scheduleRefresh(data.expires_in * 1000);
+      window.location.replace('/');
+    } catch (err) {
+      console.error('handleCallback:', err);
+      window.location.href = '/';
+    }
+  },
+
+  // ══════════════════════════════════════════
+  // 靜默刷新：先查 localStorage，再呼叫後端 /api/refresh
+  // ══════════════════════════════════════════
+  async _silentRefresh() {
+    if (this._refreshing) return false;
+    this._refreshing = true;
+    try {
+      // 1. localStorage 的 access token 還有效
+      const saved = this._loadAccess();
+      if (saved) {
+        this.accessToken = saved;
+        const d = JSON.parse(localStorage.getItem('home_tok') || 'null');
+        if (d) this._scheduleRefresh(d.exp - Date.now());
+        this._refreshing = false;
+        return true;
+      }
+      // 2. access token 過期 → 後端用 refresh token cookie 換新的
+      const r = await fetch('/api/refresh', { method: 'POST' });
+      if (!r.ok) { this._refreshing = false; return false; }
+      const data = await r.json();
+      this.accessToken = data.access_token;
+      this._saveAccess(data.access_token, data.expires_in);
+      this._scheduleRefresh(data.expires_in * 1000);
+      this._refreshing = false;
+      return true;
+    } catch {
+      this._refreshing = false;
+      return false;
+    }
+  },
+
+  // 到期前 5 分鐘自動刷新
   _scheduleRefresh(msUntilExpiry) {
     const delay = Math.max(msUntilExpiry - 5 * 60 * 1000, 10000);
     clearTimeout(this._refreshTimer);
-    this._refreshTimer = setTimeout(() => {
-      this.tokenClient?.requestAccessToken({ prompt: '' });
+    this._refreshTimer = setTimeout(async () => {
+      localStorage.removeItem('home_tok'); // 強制走後端 refresh
+      const ok = await this._silentRefresh();
+      if (!ok) { this.accessToken = null; APP.showAuthScreen?.(); }
     }, delay);
   },
 
-  handleExpired() {
-    const now = Date.now();
-    if (this._refreshing || now - this._lastExpired < 15000) return;
-    this._refreshing = true;
-    this._lastExpired = now;
-    this.accessToken = null;
-    localStorage.removeItem('home_tok');
-    this.tokenClient?.requestAccessToken({ prompt: '' });
-  },
-
-  signIn() { this.tokenClient?.requestAccessToken({ prompt: '' }); },
-
-  // ── 從背景切回前台時靜默刷新 token ──
+  // 從背景切回前台時檢查
   _bindVisibility() {
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState !== 'visible') return;
-      if (this._refreshing) return;
-      if (this.accessToken) {
-        // token 存在：檢查是否快到期（5分鐘內到期就提前刷）
-        const d = JSON.parse(localStorage.getItem('home_tok') || 'null');
-        if (d && d.exp - Date.now() < 5 * 60 * 1000) {
-          this.tokenClient?.requestAccessToken({ prompt: '' });
-        }
-      } else {
-        // token 不存在：嘗試靜默重新驗證（不彈視窗）
-        this.tokenClient?.requestAccessToken({ prompt: '' });
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState !== 'visible' || this._refreshing) return;
+      const d = JSON.parse(localStorage.getItem('home_tok') || 'null');
+      if (!d || d.exp - Date.now() < 5 * 60 * 1000) {
+        localStorage.removeItem('home_tok');
+        const ok = await this._silentRefresh();
+        if (ok) APP.refresh?.();
       }
     });
   },
 
-  signOut() {
-    if (this.accessToken) google.accounts.oauth2.revoke(this.accessToken);
+  // sheets.js 發現 401 時呼叫
+  async handleExpired() {
+    if (this._refreshing) return;
+    this.accessToken = null;
+    localStorage.removeItem('home_tok');
+    const ok = await this._silentRefresh();
+    if (ok) { APP.refresh?.(); }
+    else { APP.showAuthScreen?.(); }
+  },
+
+  // 登出
+  async signOut() {
+    clearTimeout(this._refreshTimer);
+    await fetch('/api/refresh', { method: 'DELETE' }).catch(() => {});
     this.accessToken = null;
     localStorage.removeItem('home_tok');
     location.reload();
   },
 
-  _save(resp) {
-    localStorage.setItem('home_tok', JSON.stringify({ t: resp.access_token, exp: Date.now() + resp.expires_in * 1000 }));
+  _saveAccess(token, expiresIn) {
+    localStorage.setItem('home_tok', JSON.stringify({ t: token, exp: Date.now() + expiresIn * 1000 }));
   },
-  _load() {
+  _loadAccess() {
     try {
       const d = JSON.parse(localStorage.getItem('home_tok') || 'null');
       if (!d || Date.now() > d.exp - 60000) { localStorage.removeItem('home_tok'); return null; }
       return d.t;
     } catch { return null; }
   },
-  get ok() { return !!this.accessToken; }
+  get ok() { return !!this.accessToken; },
 };
