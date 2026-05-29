@@ -811,11 +811,11 @@ async function doSave() {
       // 新增：加到最後
       data.push(entry);
     }
-    localStorage.setItem('fam_v4', JSON.stringify(data));
+    localStorage.setItem(CACHE, JSON.stringify(data));
     render();
     closeModal();
     toast('✅ 儲存成功');
-    setTimeout(() => load(), 1500); // 背景延遲同步 Sheet
+    // 不再呼叫 load()：本地已即時更新，避免 Sheet API 延遲覆蓋本地資料
   } catch (e) {
     if (e.message === 'TOKEN_EXPIRED') { handleTokenExpired(); return; }
     toast('❌ 儲存失敗：' + e.message);
@@ -831,13 +831,12 @@ async function doDelete() {
     await FAM.deleteRow(rowNum);
     // 馬上從本地移除，畫面即時更新
     data = data.filter(e => e.id !== curId);
-    localStorage.setItem('fam_v4', JSON.stringify(data));
+    localStorage.setItem(CACHE, JSON.stringify(data));
     rowMap.delete(curId);
     render();
     closeModal();
     toast('🗑 已刪除');
-    // 延遲 2.5 秒再 load()，給 Sheet API 時間反映刪除
-    setTimeout(() => load(), 2500);
+    // 不再呼叫 load()：本地已即時更新，避免 Sheet API 延遲把資料帶回來
   } catch (e) {
     if (e.message === 'TOKEN_EXPIRED') { handleTokenExpired(); return; }
     toast('❌ 刪除失敗：' + e.message);
