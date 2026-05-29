@@ -54,6 +54,12 @@ const APP = {
     }
   },
 
+  showAuthScreen(){
+    document.getElementById('loading').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+    document.getElementById('app').style.display='none';
+  },
+
   onAuthSuccess(){
     document.getElementById('auth-screen').style.display='none';
     document.getElementById('app').style.display='flex';
@@ -1579,4 +1585,7 @@ const APP = {
   },
 };
 
-window.addEventListener('DOMContentLoaded',()=>APP.init());
+// callback 路徑由 index.html 處理，不執行 APP.init()
+window.addEventListener('DOMContentLoaded', () => {
+  if (window.location.pathname !== '/auth/callback') APP.init();
+});

@@ -433,14 +433,6 @@
 <script src="/js/sheets.js"></script>
 <script src="/js/app.js"></script>
 <script>
-// ── Google OAuth callback 處理 ──
-if (window.location.pathname === '/auth/callback') {
-  AUTH.handleCallback();
-} else {
-  // 正常頁面初始化
-  AUTH.init();
-}
-
 // ── Family 跳轉：帶 token 過去 ──
 function goToFamily() {
   const raw = localStorage.getItem('home_tok');
@@ -453,12 +445,11 @@ function goToFamily() {
   } catch(e) { window.location.href = '/family/'; }
 }
 
-// ── APP 顯示登入畫面（auth 失敗時呼叫）──
-APP.showAuthScreen = function() {
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('auth-screen').style.display = '';
-  document.getElementById('loading').style.display = 'none';
-};
+// ── Google OAuth callback：在 app.js DOMContentLoaded 之前攔截 ──
+// 若是 callback 路徑，直接處理，不跑 APP.init()
+if (window.location.pathname === '/auth/callback') {
+  document.addEventListener('DOMContentLoaded', () => AUTH.handleCallback());
+}
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 </script>
