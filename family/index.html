@@ -282,7 +282,7 @@ const FAM = {
 
   // ── 更新指定列 ──
   async update(rowNum, row) {
-    const range = `${this.TAB}!A${rowNum}:I${rowNum}`;
+    const range = `${this.TAB}!A${rowNum}:J${rowNum}`;
     const url = `${this.BASE}/${this.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=RAW`;
     const r = await fetch(url, {
       method: 'PUT',
