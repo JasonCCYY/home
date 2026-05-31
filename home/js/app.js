@@ -97,8 +97,8 @@ const APP = {
   _setMonthLabels(){
     const n=new Date();
     const cur=`${n.getFullYear()}年${n.getMonth()+1}月`;
-    n.setMonth(n.getMonth()-1);
-    const prev=`${n.getFullYear()}年${n.getMonth()+1}月`;
+    const p=new Date(n.getFullYear(),n.getMonth()-1,1);
+    const prev=`${p.getFullYear()}年${p.getMonth()+1}月`;
     const lc=document.getElementById('label-curMonth');
     const lp=document.getElementById('label-prevMonth');
     if(lc) lc.textContent=cur;
@@ -107,7 +107,7 @@ const APP = {
 
   prevMonthLastDay(){
     const n=new Date(); n.setDate(1); n.setDate(0);
-    return n.toISOString().split('T')[0];
+    return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
   },
 
   // ── Helpers ──
@@ -130,7 +130,7 @@ const APP = {
     return `${n.getFullYear()}/${String(n.getMonth()+1).padStart(2,'0')}`;
   },
   prevMonth(){
-    const n=new Date(); n.setMonth(n.getMonth()-1);
+    const n=new Date(new Date().getFullYear(),new Date().getMonth()-1,1);
     return `${n.getFullYear()}/${String(n.getMonth()+1).padStart(2,'0')}`;
   },
   getMonth(d){
