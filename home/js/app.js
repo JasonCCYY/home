@@ -1369,9 +1369,9 @@ const APP = {
     this._editExpRow=r?r._row:null;
     document.getElementById('modal-add-expense').querySelector('.modal-title').textContent=r?'修改開支記錄':'新增開支記錄';
     document.getElementById('exp-date').value=r?(r.date.replace(/\//g,'-')):this.todayISO();
-    document.getElementById('exp-amount').value=r?String(r.amount).replace(/,/g,''):'';
+    document.getElementById('exp-amount').value=r?String(r.amount).replace(/[^0-9.]/g,''):'';
     document.getElementById('exp-note').value=r?r.note||'':'';
-    document.getElementById('exp-mileage').value=r?r.mileage||'':'';
+    document.getElementById('exp-mileage').value=r?String(r.mileage||'').replace(/[^0-9]/g,''):'';
     document.querySelectorAll('#exp-cat-chips .chip').forEach(c=>c.classList.toggle('on',c.textContent.trim()===cat));
     this._renderExpItemChips(cat);
     // 填入 item 需在 renderExpItemChips 之後，讓 chip 先渲染完畢
