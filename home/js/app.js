@@ -515,7 +515,7 @@ const APP = {
         items.forEach(r=>{
           const idx=this._storeRow(r);
           html+=`<div class="list-row" data-key="${idx}" data-action="expDetail">
-            <div class="row-main"><div class="row-title">${r.item}</div><div class="row-sub">${r.note||''}${r.mileage?' · '+r.mileage:''}</div></div>
+            <div class="row-main"><div class="row-title">${r.item}</div><div class="row-sub">${r.note||''}${r.mileage?' · '+r.mileage+' km':''}</div></div>
             <div class="row-right"><div class="row-amount neutral">$${this.fmt(r.amount)}</div><div class="row-date">${r.date}</div></div>
             <div class="row-arrow">›</div>
           </div>`;
@@ -1406,7 +1406,8 @@ const APP = {
     if(!date||!item||!amount){this.toast('請填入日期、項目和金額');return;}
     try{
       this.toast('儲存中…');
-      const row={date,cat:this._expCat,item,amount,note:document.getElementById('exp-note').value,mileage:document.getElementById('exp-mileage').value};
+      const rawMileage=document.getElementById('exp-mileage').value.replace(/[^0-9]/g,'');
+      const row={date,cat:this._expCat,item,amount,note:document.getElementById('exp-note').value,mileage:rawMileage};
       if(this._editExpRow){
         await SHEETS.updateGasExpRow(this._editExpRow,row);
         this._editExpRow=null;
@@ -1428,7 +1429,7 @@ const APP = {
     document.getElementById('exp-detail-content').innerHTML=[
       ['日期',r.date],['類別',r.cat],['項目',r.item],
       ['金額',`<span style="color:#dc2626;font-weight:700;font-size:1.2rem">${this.fmtM(r.amount)}</span>`],
-      ['備註',r.note||'-'],['里程',r.mileage||'-'],
+      ['備註',r.note||'-'],['里程',r.mileage?r.mileage+' km':'-'],
     ].map(([k,v])=>`<div class="detail-field"><span class="detail-key">${k}</span><span class="detail-val">${v}</span></div>`).join('');
     document.getElementById('exp-detail-edit-btn').onclick=()=>{this._detailFromSearch=false;this.closeModal('modal-exp-detail');this._openExpenseModal(r);};
     document.getElementById('exp-detail-del-btn').onclick=()=>{this._detailFromSearch=false;this._deleteGasExp(r);};
