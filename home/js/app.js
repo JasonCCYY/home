@@ -1364,17 +1364,18 @@ const APP = {
   },
 
   _openExpenseModal(r=null){
-    this._expCat=r?r.cat:'保養';
+    const cat=r?r.cat:'保養';
+    this._expCat=cat;
     this._editExpRow=r?r._row:null;
     document.getElementById('modal-add-expense').querySelector('.modal-title').textContent=r?'修改開支記錄':'新增開支記錄';
     document.getElementById('exp-date').value=r?(r.date.replace(/\//g,'-')):this.todayISO();
     document.getElementById('exp-amount').value=r?String(r.amount).replace(/,/g,''):'';
-    document.getElementById('exp-item').value=r?r.item:'';
     document.getElementById('exp-note').value=r?r.note||'':'';
     document.getElementById('exp-mileage').value=r?r.mileage||'':'';
-    ['exp-item','exp-amount','exp-note','exp-mileage'].forEach(id=>document.getElementById(id).value='');
-    document.querySelectorAll('#exp-cat-chips .chip').forEach(c=>c.classList.toggle('on',c.textContent==='保養'));
-    this._renderExpItemChips('保養');
+    document.querySelectorAll('#exp-cat-chips .chip').forEach(c=>c.classList.toggle('on',c.textContent.trim()===cat));
+    this._renderExpItemChips(cat);
+    // 填入 item 需在 renderExpItemChips 之後，讓 chip 先渲染完畢
+    document.getElementById('exp-item').value=r?r.item:'';
     this.openModal('modal-add-expense');
   },
 
