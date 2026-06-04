@@ -94,6 +94,19 @@ const APP = {
     // silent refresh - no toast
   },
 
+  // 儲存/刪除後延遲 3 秒刷新統計（只清統計快取，不影響細項）
+  _refreshOverviewLater(){
+    clearTimeout(this._ovTimer);
+    this._ovTimer = setTimeout(() => {
+      // 清除所有統計快取
+      ['estimate','monthExp','balance','year','lineChart'].forEach(k => SHEETS.clearCache(k));
+      // 重置已載入旗標
+      ['estInc','monthExp','balance','annualSum','lineChart'].forEach(s => this._loaded['ov_' + s] = false);
+      // 如果目前在統計 Tab，立即重新載入當前子頁
+      if (this.tab === 'overview') this._loadOvSub(this.subOv);
+    }, 3000);
+  },
+
   _setMonthLabels(){
     const n=new Date();
     const cur=`${n.getFullYear()}年${n.getMonth()+1}月`;
@@ -515,7 +528,7 @@ const APP = {
         items.forEach(r=>{
           const idx=this._storeRow(r);
           html+=`<div class="list-row" data-key="${idx}" data-action="expDetail">
-            <div class="row-main"><div class="row-title">${r.item}</div><div class="row-sub">${r.note||''}${r.mileage?' · '+r.mileage+' km':''}</div></div>
+            <div class="row-main"><div class="row-title">${r.item}</div><div class="row-sub">${r.note||''}${r.mileage?' · '+r.mileage:''}</div></div>
             <div class="row-right"><div class="row-amount neutral">$${this.fmt(r.amount)}</div><div class="row-date">${r.date}</div></div>
             <div class="row-arrow">›</div>
           </div>`;
@@ -1364,18 +1377,17 @@ const APP = {
   },
 
   _openExpenseModal(r=null){
-    const cat=r?r.cat:'保養';
-    this._expCat=cat;
+    this._expCat=r?r.cat:'保養';
     this._editExpRow=r?r._row:null;
     document.getElementById('modal-add-expense').querySelector('.modal-title').textContent=r?'修改開支記錄':'新增開支記錄';
     document.getElementById('exp-date').value=r?(r.date.replace(/\//g,'-')):this.todayISO();
-    document.getElementById('exp-amount').value=r?String(r.amount).replace(/[^0-9.]/g,''):'';
-    document.getElementById('exp-note').value=r?r.note||'':'';
-    document.getElementById('exp-mileage').value=r?String(r.mileage||'').replace(/[^0-9]/g,''):'';
-    document.querySelectorAll('#exp-cat-chips .chip').forEach(c=>c.classList.toggle('on',c.textContent.trim()===cat));
-    this._renderExpItemChips(cat);
-    // 填入 item 需在 renderExpItemChips 之後，讓 chip 先渲染完畢
+    document.getElementById('exp-amount').value=r?String(r.amount).replace(/,/g,''):'';
     document.getElementById('exp-item').value=r?r.item:'';
+    document.getElementById('exp-note').value=r?r.note||'':'';
+    document.getElementById('exp-mileage').value=r?r.mileage||'':'';
+    ['exp-item','exp-amount','exp-note','exp-mileage'].forEach(id=>document.getElementById(id).value='');
+    document.querySelectorAll('#exp-cat-chips .chip').forEach(c=>c.classList.toggle('on',c.textContent==='保養'));
+    this._renderExpItemChips('保養');
     this.openModal('modal-add-expense');
   },
 
@@ -1406,8 +1418,7 @@ const APP = {
     if(!date||!item||!amount){this.toast('請填入日期、項目和金額');return;}
     try{
       this.toast('儲存中…');
-      const rawMileage=document.getElementById('exp-mileage').value.replace(/[^0-9]/g,'');
-      const row={date,cat:this._expCat,item,amount,note:document.getElementById('exp-note').value,mileage:rawMileage};
+      const row={date,cat:this._expCat,item,amount,note:document.getElementById('exp-note').value,mileage:document.getElementById('exp-mileage').value};
       if(this._editExpRow){
         await SHEETS.updateGasExpRow(this._editExpRow,row);
         this._editExpRow=null;
@@ -1429,7 +1440,7 @@ const APP = {
     document.getElementById('exp-detail-content').innerHTML=[
       ['日期',r.date],['類別',r.cat],['項目',r.item],
       ['金額',`<span style="color:#dc2626;font-weight:700;font-size:1.2rem">${this.fmtM(r.amount)}</span>`],
-      ['備註',r.note||'-'],['里程',r.mileage?r.mileage+' km':'-'],
+      ['備註',r.note||'-'],['里程',r.mileage||'-'],
     ].map(([k,v])=>`<div class="detail-field"><span class="detail-key">${k}</span><span class="detail-val">${v}</span></div>`).join('');
     document.getElementById('exp-detail-edit-btn').onclick=()=>{this._detailFromSearch=false;this.closeModal('modal-exp-detail');this._openExpenseModal(r);};
     document.getElementById('exp-detail-del-btn').onclick=()=>{this._detailFromSearch=false;this._deleteGasExp(r);};
@@ -1554,6 +1565,7 @@ const APP = {
       this.toast('✅ 已儲存');
       if(this.subDetail==='curMonth') this.loadCurMonth();
       else if(this.subDetail==='prevMonth') this.loadPrevMonth();
+      this._refreshOverviewLater(); // 延遲 3 秒刷新統計
     }catch(e){this.toast('❌ '+e.message);}
   },
 
@@ -1583,6 +1595,7 @@ const APP = {
       this.toast('🗑️ 已刪除');
       if(this.subDetail==='curMonth') this.loadCurMonth();
       else this.loadPrevMonth();
+      this._refreshOverviewLater(); // 延遲 3 秒刷新統計
     }catch(e){this.toast('❌ '+e.message);}
   },
 };
