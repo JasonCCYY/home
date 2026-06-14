@@ -603,6 +603,7 @@ const APP = {
     if(!recs.length) return this.empty();
     const inc=recs.filter(r=>r.io==='Inc.'&&r.counted==='TRUE');
     const exp=recs.filter(r=>r.io==='Exp.'&&r.counted==='TRUE');
+    const expAll=recs.filter(r=>r.io==='Exp.');
     const incT=inc.reduce((s,r)=>s+this.num(r.amount),0);
     const expT=exp.reduce((s,r)=>s+this.num(r.amount),0);
     const bal=incT-expT;
@@ -624,14 +625,15 @@ const APP = {
         </div>`;
       });
     }
-    if(exp.length){
+    if(expAll.length){
       html+=`<div class="section-hdr">支出<span class="section-badge badge-exp">$${expT.toLocaleString()}</span></div>`;
-      exp.forEach(r=>{
+      expAll.forEach(r=>{
         const idx=this._storeRow(r);
         const d=String(r.date).split('/');
         const dm=d.length>=3?`${d[1].padStart(2,'0')}/${d[2].padStart(2,'0')}`:r.date;
+        const creditBadge=r.counted==='FALSE'?`<span class="badge-credit">已刷卡</span>`:'';
         html+=`<div class="list-row" data-key="${idx}" data-action="dataDetail">
-          <div class="row-main"><div class="row-title">${r.note?`${r.item} · ${r.note}`:r.item}</div></div>
+          <div class="row-main"><div class="row-title">${r.note?`${r.item} · ${r.note}`:r.item}${creditBadge}</div></div>
           <div class="row-right"><div class="row-amount exp">$${this.fmt(r.amount)}</div><div class="row-date">${dm}</div></div>
           <div class="row-arrow">›</div>
         </div>`;
