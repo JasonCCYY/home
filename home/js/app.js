@@ -82,7 +82,7 @@ const APP = {
       this._loadCarSub(this.subCar);
     } else if (this.tab === 'detail') {
       SHEETS.clearCache('data');
-      ['curMonth','prevMonth','detailAna'].forEach(s => this._loaded['det_' + s] = false);
+      ['curMonth','prevMonth','expAna','stockAna'].forEach(s => this._loaded['det_' + s] = false);
       this._loadDetailSub(this.subDetail);
     } else if (this.tab === 'overview') {
       const cacheMap = { estInc:['estimate','monthInc'], monthExp:'monthExp', balance:'balance', annualSum:'year', lineChart:'lineChart' };
