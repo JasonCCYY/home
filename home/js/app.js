@@ -85,9 +85,9 @@ const APP = {
       ['curMonth','prevMonth','detailAna'].forEach(s => this._loaded['det_' + s] = false);
       this._loadDetailSub(this.subDetail);
     } else if (this.tab === 'overview') {
-      const cacheMap = { estInc:'estimate', monthExp:'monthExp', balance:'balance', annualSum:'year', lineChart:'lineChart' };
-      const key = cacheMap[this.subOv];
-      if (key) SHEETS.clearCache(key);
+      const cacheMap = { estInc:['estimate','monthInc'], monthExp:'monthExp', balance:'balance', annualSum:'year', lineChart:'lineChart' };
+      const keys=[].concat(cacheMap[this.subOv]||[]);
+      keys.forEach(k=>SHEETS.clearCache(k));
       this._loaded['ov_' + this.subOv] = false;
       this._loadOvSub(this.subOv);
     }
@@ -99,7 +99,7 @@ const APP = {
     clearTimeout(this._ovTimer);
     this._ovTimer = setTimeout(() => {
       // 清除所有統計快取
-      ['estimate','monthExp','balance','year','lineChart'].forEach(k => SHEETS.clearCache(k));
+      ['estimate','monthInc','monthExp','balance','year','lineChart'].forEach(k => SHEETS.clearCache(k));
       // 重置已載入旗標
       ['estInc','monthExp','balance','annualSum','lineChart'].forEach(s => this._loaded['ov_' + s] = false);
       // 如果目前在統計 Tab，立即重新載入當前子頁
