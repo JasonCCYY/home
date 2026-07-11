@@ -221,7 +221,7 @@ const SHEETS = {
 
   async loadMonthExp() {
     const load = async () => {
-      const rows = await this.read(this.IN_ID, this.IN.monthExp, 'A1:N50');
+      const rows = await this.read(this.IN_ID, this.IN.monthExp, 'A1:P50');
       return rows;
     };
     return this.cached('monthExp', load);
