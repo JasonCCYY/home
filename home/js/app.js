@@ -5,10 +5,10 @@ const APP = {
   subDetail: 'curMonth',
   subOv: 'estInc',
   CAR_SUBS:    ['oil','oilStat','expense','yearStat'],
-  DETAIL_SUBS: ['curMonth','prevMonth','expAna','stockAna'],
+  DETAIL_SUBS: ['curMonth','prevMonth','familyExp','expAna','stockAna'],
   OV_SUBS:     ['estInc','monthExp','balance','annualSum','lineChart'],
   CAR_PAGES:    { oil:'sp-oil', oilStat:'sp-oilStat', expense:'sp-expense', yearStat:'sp-yearStat' },
-  DETAIL_PAGES: { curMonth:'sp-curMonth', prevMonth:'sp-prevMonth', expAna:'sp-expAna', stockAna:'sp-stockAna' },
+  DETAIL_PAGES: { curMonth:'sp-curMonth', prevMonth:'sp-prevMonth', familyExp:'sp-familyExp', expAna:'sp-expAna', stockAna:'sp-stockAna' },
   OV_PAGES:     { estInc:'sp-estInc', monthExp:'sp-monthExp', balance:'sp-balance', annualSum:'sp-annualSum', lineChart:'sp-lineChart' },
 
   _rowStore: [],
@@ -83,7 +83,7 @@ const APP = {
     } else if (this.tab === 'detail') {
       SHEETS.clearCache('data');
       SHEETS.clearCache('options');
-      ['curMonth','prevMonth','expAna','stockAna'].forEach(s => this._loaded['det_' + s] = false);
+      ['curMonth','prevMonth','familyExp','expAna','stockAna'].forEach(s => this._loaded['det_' + s] = false);
       this._loadDetailSub(this.subDetail);
     } else if (this.tab === 'overview') {
       const cacheMap = { estInc:['estimate','monthInc'], monthExp:'monthExp', balance:'balance', annualSum:'year', lineChart:'lineChart' };
@@ -573,7 +573,7 @@ const APP = {
   // ════════════════════════════════════════
 
   _loadDetailSub(sub){
-    const fn={curMonth:()=>this.loadCurMonth(),prevMonth:()=>this.loadPrevMonth(),expAna:()=>this.loadDetailAna(),stockAna:()=>this.loadStockAna()};
+    const fn={curMonth:()=>this.loadCurMonth(),prevMonth:()=>this.loadPrevMonth(),familyExp:()=>this.loadFamilyExp(),expAna:()=>this.loadDetailAna(),stockAna:()=>this.loadStockAna()};
     fn[sub]?.();
     this._loaded['det_'+sub]=true;
   },
@@ -597,6 +597,44 @@ const APP = {
       const all=await SHEETS.loadData();
       this._storeNS='p_'; this._clearStore();
       el.innerHTML=this._renderMonthDetail(all.filter(r=>this.getMonth(r.date)===this.prevMonth()));
+    }catch(e){el.innerHTML=this.err(e);}
+  },
+
+  async loadFamilyExp(){
+    const el=document.getElementById('family-exp-list');
+    if(!el) return;
+    el.innerHTML=this.loading();
+    try{
+      const all=await SHEETS.loadData();
+      this._storeNS='fe_'; this._clearStore();
+      const recs=all.filter(r=>r.io==='Exp.'&&r.item==='小家庭')
+        .sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+      if(!recs.length){el.innerHTML=this.empty();return;}
+      const byYear={};
+      recs.forEach(r=>{
+        const yr=this.getYear(r.date);
+        (byYear[yr]=byYear[yr]||[]).push(r);
+      });
+      const years=Object.keys(byYear).sort((a,b)=>b.localeCompare(a));
+      let html='<div style="padding-bottom:80px">';
+      years.forEach(yr=>{
+        const yrRecs=byYear[yr];
+        const yrTotal=yrRecs.reduce((s,r)=>s+this.num(r.amount),0);
+        html+=`<div class="section-hdr">${yr}<span class="section-badge badge-exp">$${yrTotal.toLocaleString()}</span></div>`;
+        yrRecs.forEach(r=>{
+          const idx=this._storeRow(r);
+          const d=String(r.date).split('/');
+          const dm=d.length>=3?`${d[1].padStart(2,'0')}/${d[2].padStart(2,'0')}`:r.date;
+          const title=r.note||'（無備註）';
+          html+=`<div class="list-row" data-key="${idx}" data-action="dataDetail">
+            <div class="row-main"><div class="row-title">${title}</div></div>
+            <div class="row-right"><div class="row-amount exp">$${this.fmt(r.amount)}</div><div class="row-date">${dm}</div></div>
+            <div class="row-arrow">›</div>
+          </div>`;
+        });
+      });
+      html+='</div>';
+      el.innerHTML=html;
     }catch(e){el.innerHTML=this.err(e);}
   },
 
