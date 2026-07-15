@@ -818,7 +818,7 @@ const APP = {
     el.innerHTML=this.loading();
     try{
       const all=await SHEETS.loadData();
-      const CATS=['保險','醫療','骨科','稅務','小家庭'];
+      const CATS=['保險','醫療','骨科','稅務'];
       const filtered=all.filter(r=>r.io==='Exp.'&&CATS.includes(r.item));
       const years=[...new Set(filtered.map(r=>this.getYear(r.date)).filter(y=>y&&y.length===4))].sort();
       const groups={};
