@@ -629,7 +629,7 @@ const APP = {
         notes.forEach(grp=>{
           const noteRecs=byNote[grp].sort(dateSortDesc);
           const noteTotal=noteRecs.reduce((s,r)=>s+this.num(r.amount),0);
-          html+=`<div class="note-group-hdr">${grp}<span class="section-badge badge-exp">$${noteTotal.toLocaleString()}</span></div>`;
+          html+=`<div class="note-group-hdr"><span class="section-badge badge-exp">$${noteTotal.toLocaleString()}</span></div>`;
           noteRecs.forEach(r=>{
             const idx=this._storeRow(r);
             const d=String(r.date).split('/');
