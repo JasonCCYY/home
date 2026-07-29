@@ -640,9 +640,14 @@ const APP = {
 
   _renderMonthDetail(recs){
     if(!recs.length) return this.empty();
-    const inc=recs.filter(r=>r.io==='Inc.'&&r.counted==='TRUE');
+    const sortFn=(a,b)=>{
+      const da=String(a.date).split('/').map(Number),db=String(b.date).split('/').map(Number);
+      for(let i=0;i<3;i++){const d=(db[i]||0)-(da[i]||0);if(d)return d;}
+      return String(a.item).localeCompare(String(b.item));
+    };
+    const inc=recs.filter(r=>r.io==='Inc.'&&r.counted==='TRUE').sort(sortFn);
     const exp=recs.filter(r=>r.io==='Exp.'&&r.counted==='TRUE');
-    const expAll=recs.filter(r=>r.io==='Exp.');
+    const expAll=recs.filter(r=>r.io==='Exp.').sort(sortFn);
     const incT=inc.reduce((s,r)=>s+this.num(r.amount),0);
     const expT=exp.reduce((s,r)=>s+this.num(r.amount),0);
     const bal=incT-expT;
