@@ -607,30 +607,38 @@ const APP = {
     try{
       const all=await SHEETS.loadData();
       this._storeNS='fe_'; this._clearStore();
-      const recs=all.filter(r=>r.io==='Exp.'&&r.item==='小家庭')
-        .sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+      const recs=all.filter(r=>r.io==='Exp.'&&r.item==='小家庭');
       if(!recs.length){el.innerHTML=this.empty();return;}
+      const dateVal=d=>{const p=String(d).split('/').map(Number);return p[0]*10000+(p[1]||0)*100+(p[2]||0);};
+      const dateSortDesc=(a,b)=>dateVal(b.date)-dateVal(a.date);
+      // Group by year (desc)
       const byYear={};
-      recs.forEach(r=>{
-        const yr=this.getYear(r.date);
-        (byYear[yr]=byYear[yr]||[]).push(r);
-      });
+      recs.forEach(r=>{const yr=this.getYear(r.date);(byYear[yr]=byYear[yr]||[]).push(r);});
       const years=Object.keys(byYear).sort((a,b)=>b.localeCompare(a));
       let html='<div style="padding-bottom:80px">';
       years.forEach(yr=>{
         const yrRecs=byYear[yr];
         const yrTotal=yrRecs.reduce((s,r)=>s+this.num(r.amount),0);
         html+=`<div class="section-hdr">${yr}<span class="section-badge badge-exp">$${yrTotal.toLocaleString()}</span></div>`;
-        yrRecs.forEach(r=>{
-          const idx=this._storeRow(r);
-          const d=String(r.date).split('/');
-          const dm=d.length>=3?`${d[1].padStart(2,'0')}/${d[2].padStart(2,'0')}`:r.date;
-          const title=r.note||'（無備註）';
-          html+=`<div class="list-row" data-key="${idx}" data-action="dataDetail">
-            <div class="row-main"><div class="row-title">${title}</div></div>
-            <div class="row-right"><div class="row-amount exp">$${this.fmt(r.amount)}</div><div class="row-date">${dm}</div></div>
-            <div class="row-arrow">›</div>
-          </div>`;
+        // Group by note within year
+        const byNote={};
+        yrRecs.forEach(r=>{const n=r.note||'（無備註）';(byNote[n]=byNote[n]||[]).push(r);});
+        // Sort note groups by latest date desc
+        const notes=Object.keys(byNote).sort((a,b)=>dateVal(byNote[b][0].date)-dateVal(byNote[a][0].date));
+        notes.forEach(note=>{
+          const noteRecs=byNote[note].sort(dateSortDesc);
+          const noteTotal=noteRecs.reduce((s,r)=>s+this.num(r.amount),0);
+          html+=`<div class="note-group-hdr">${note}<span class="section-badge badge-exp">$${noteTotal.toLocaleString()}</span></div>`;
+          noteRecs.forEach(r=>{
+            const idx=this._storeRow(r);
+            const d=String(r.date).split('/');
+            const dm=d.length>=3?`${d[1].padStart(2,'0')}/${d[2].padStart(2,'0')}`:r.date;
+            html+=`<div class="list-row" data-key="${idx}" data-action="dataDetail">
+              <div class="row-main"><div class="row-title">${note}</div></div>
+              <div class="row-right"><div class="row-amount exp">$${this.fmt(r.amount)}</div><div class="row-date">${dm}</div></div>
+              <div class="row-arrow">›</div>
+            </div>`;
+          });
         });
       });
       html+='</div>';
