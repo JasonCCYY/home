@@ -6,11 +6,11 @@ const APP = {
   subAna: 'expAna',
   subOv: 'estInc',
   CAR_SUBS:    ['oil','oilStat','expense','yearStat'],
-  DETAIL_SUBS: ['curMonth','prevMonth','familyExp'],
+  DETAIL_SUBS: ['curMonth','prevMonth','homeExp','familyExp'],
   ANA_SUBS:    ['expAna','stockAna'],
   OV_SUBS:     ['estInc','monthExp','balance','annualSum','lineChart'],
   CAR_PAGES:    { oil:'sp-oil', oilStat:'sp-oilStat', expense:'sp-expense', yearStat:'sp-yearStat' },
-  DETAIL_PAGES: { curMonth:'sp-curMonth', prevMonth:'sp-prevMonth', familyExp:'sp-familyExp' },
+  DETAIL_PAGES: { curMonth:'sp-curMonth', prevMonth:'sp-prevMonth', homeExp:'sp-homeExp', familyExp:'sp-familyExp' },
   ANA_PAGES:    { expAna:'sp-expAna', stockAna:'sp-stockAna' },
   OV_PAGES:     { estInc:'sp-estInc', monthExp:'sp-monthExp', balance:'sp-balance', annualSum:'sp-annualSum', lineChart:'sp-lineChart' },
 
@@ -87,7 +87,7 @@ const APP = {
     } else if (this.tab === 'detail') {
       SHEETS.clearCache('data');
       SHEETS.clearCache('options');
-      ['curMonth','prevMonth','familyExp'].forEach(s => this._loaded['det_' + s] = false);
+      ['curMonth','prevMonth','homeExp','familyExp'].forEach(s => this._loaded['det_' + s] = false);
       this._loadDetailSub(this.subDetail);
     } else if (this.tab === 'ana') {
       SHEETS.clearCache('data');
@@ -616,7 +616,7 @@ const APP = {
   // ════════════════════════════════════════
 
   _loadDetailSub(sub){
-    const fn={curMonth:()=>this.loadCurMonth(),prevMonth:()=>this.loadPrevMonth(),familyExp:()=>this.loadFamilyExp()};
+    const fn={curMonth:()=>this.loadCurMonth(),prevMonth:()=>this.loadPrevMonth(),homeExp:()=>this.loadHomeExp(),familyExp:()=>this.loadFamilyExp()};
     fn[sub]?.();
     this._loaded['det_'+sub]=true;
   },
@@ -653,6 +653,55 @@ const APP = {
       const all=await SHEETS.loadData();
       this._storeNS='p_'; this._clearStore();
       el.innerHTML=this._renderMonthDetail(all.filter(r=>this.getMonth(r.date)===this.prevMonth()));
+    }catch(e){el.innerHTML=this.err(e);}
+  },
+
+  async loadHomeExp(){
+    const el=document.getElementById('home-exp-list');
+    if(!el) return;
+    el.innerHTML=this.loading();
+    try{
+      const all=await SHEETS.loadData();
+      this._storeNS='hm_'; this._clearStore();
+      const recs=all.filter(r=>r.io==='Exp.'&&r.item==='小家庭');
+      if(!recs.length){el.innerHTML=this.empty();return;}
+      const dateVal=d=>{const p=String(d).split('/').map(Number);return p[0]*10000+(p[1]||0)*100+(p[2]||0);};
+      const dateSortDesc=(a,b)=>dateVal(b.date)-dateVal(a.date);
+      // Group by year (desc)
+      const byYear={};
+      recs.forEach(r=>{const yr=this.getYear(r.date);(byYear[yr]=byYear[yr]||[]).push(r);});
+      const years=Object.keys(byYear).sort((a,b)=>b.localeCompare(a));
+      let html='<div style="padding-bottom:80px">';
+      years.forEach(yr=>{
+        const yrRecs=byYear[yr];
+        const yrTotal=yrRecs.reduce((s,r)=>s+this.num(r.amount),0);
+        html+=`<div class="section-hdr">${yr}<span class="section-badge badge-exp">$${yrTotal.toLocaleString()}</span></div>`;
+        // Group by month within year (desc)
+        const byMonth={};
+        yrRecs.forEach(r=>{const m=this.getMonth(r.date);(byMonth[m]=byMonth[m]||[]).push(r);});
+        const months=Object.keys(byMonth).sort((a,b)=>b.localeCompare(a));
+        months.forEach(mo=>{
+          const moRecs=byMonth[mo].sort(dateSortDesc);
+          const moTotal=moRecs.reduce((s,r)=>s+this.num(r.amount),0);
+          const moNum=parseInt(mo.split('/')[1]||mo);
+          html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 16px;background:#f4f7fc;border-bottom:1px solid var(--border)">
+            <span style="font-size:.83rem;color:var(--txt2);font-weight:600">${moNum}月</span>
+            <span class="section-badge badge-exp">$${moTotal.toLocaleString()}</span>
+          </div>`;
+          moRecs.forEach(r=>{
+            const idx=this._storeRow(r);
+            const d=String(r.date).split('/');
+            const dm=d.length>=3?`${d[1].padStart(2,'0')}/${d[2].padStart(2,'0')}`:r.date;
+            html+=`<div class="list-row" data-key="${idx}" data-action="dataDetail">
+              <div class="row-main"><div class="row-title">${r.note||'（無備註）'}</div></div>
+              <div class="row-right"><div class="row-amount exp">$${this.fmt(r.amount)}</div><div class="row-date">${dm}</div></div>
+              <div class="row-arrow">›</div>
+            </div>`;
+          });
+        });
+      });
+      html+='</div>';
+      el.innerHTML=html;
     }catch(e){el.innerHTML=this.err(e);}
   },
 
