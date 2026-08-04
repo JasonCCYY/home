@@ -128,8 +128,11 @@ const APP = {
   num(v){ return Number(String(v||0).replace(/[,\s\$]/g,'')); },
   fmt(v){
     if(v===''||v===null||v===undefined||v==='-') return '-';
-    const n=Number(String(v).replace(/,/g,''));
-    return isNaN(n)?String(v):n.toLocaleString();
+    const s=String(v);
+    const stripped=s.replace(/,/g,'');
+    if(/^0\d+$/.test(stripped)) return stripped; // preserve leading zeros (e.g. stock codes 0050)
+    const n=Number(stripped);
+    return isNaN(n)?s:n.toLocaleString();
   },
   fmtM(v){ const f=this.fmt(v); return f==='-'?'-':'$'+f; },
   fmtWan(v){
