@@ -85,8 +85,8 @@ html,body{height:100%;font-family:'Noto Sans TC',sans-serif;background:var(--bg)
 /* ── Content layout ── */
 #content{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
 #tab-swipe-container{flex:1;overflow:hidden;min-height:0;display:flex;position:relative}
-#tab-swipe-inner{display:flex;flex:none;width:300%;height:100%;transition:transform .28s cubic-bezier(.4,0,.2,1);will-change:transform}
-.page{flex:0 0 calc(100% / 3);display:flex;flex-direction:column;overflow:hidden;min-height:0;position:relative}
+#tab-swipe-inner{display:flex;flex:none;width:400%;height:100%;transition:transform .28s cubic-bezier(.4,0,.2,1);will-change:transform}
+.page{flex:0 0 calc(100% / 4);display:flex;flex-direction:column;overflow:hidden;min-height:0;position:relative}
 
 /* ── Sub pages: stacked inside page, only one visible at a time ── */
 .sub-page{

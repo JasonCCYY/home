@@ -90,7 +90,9 @@
     <button class="sub-tab active" data-sub="curMonth">當月</button>
     <button class="sub-tab" data-sub="prevMonth">上月</button>
     <button class="sub-tab" data-sub="familyExp">小家庭</button>
-    <button class="sub-tab" data-sub="expAna">支出分析</button>
+  </div>
+  <div class="sub-tabs sub-tabs-even" id="sub-ana" style="display:none">
+    <button class="sub-tab active" data-sub="expAna">支出分析</button>
     <button class="sub-tab" data-sub="stockAna">股票</button>
   </div>
   <div class="sub-tabs sub-tabs-even" id="sub-ov" style="display:none">
@@ -163,7 +165,12 @@
           <div class="scroll-content" id="family-exp-list"><div class="load-msg">載入中...</div></div>
         </div>
 
-        <div class="sub-page" id="sp-expAna">
+      </div><!-- /pg-detail -->
+
+      <!-- ════ PAGE 2: 分析 ════ -->
+      <div id="pg-ana" class="page">
+
+        <div class="sub-page active" id="sp-expAna">
           <div class="frozen-table-wrap" id="exp-ana-content"><div class="load-msg">載入中...</div></div>
         </div>
 
@@ -171,9 +178,10 @@
           <div class="frozen-table-wrap" id="stock-ana-content"><div class="load-msg">載入中...</div></div>
         </div>
 
-      </div><!-- /pg-detail -->
+      <div class="ov-swipe-hint" id="ana-swipe-hint">← 底部左右滑動切換分頁 →</div>
+      </div><!-- /pg-ana -->
 
-      <!-- ════ PAGE 2: 收支總覽 ════ -->
+      <!-- ════ PAGE 3: 收支總覽 ════ -->
       <div id="pg-overview" class="page">
 
         <div class="sub-page active" id="sp-estInc">
@@ -218,6 +226,15 @@
         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
       </svg>
       細項
+    </button>
+    <button class="tab-btn" data-tab="ana">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="2" y="3" width="20" height="14" rx="2"/>
+        <line x1="8" y1="21" x2="16" y2="21"/>
+        <line x1="12" y1="17" x2="12" y2="21"/>
+        <polyline points="7 10 10 7 13 10 17 6"/>
+      </svg>
+      分析
     </button>
     <button class="tab-btn" data-tab="overview">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">

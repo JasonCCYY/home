@@ -3,12 +3,15 @@ const APP = {
   tab: 'detail',
   subCar: 'oil',
   subDetail: 'curMonth',
+  subAna: 'expAna',
   subOv: 'estInc',
   CAR_SUBS:    ['oil','oilStat','expense','yearStat'],
-  DETAIL_SUBS: ['curMonth','prevMonth','familyExp','expAna','stockAna'],
+  DETAIL_SUBS: ['curMonth','prevMonth','familyExp'],
+  ANA_SUBS:    ['expAna','stockAna'],
   OV_SUBS:     ['estInc','monthExp','balance','annualSum','lineChart'],
   CAR_PAGES:    { oil:'sp-oil', oilStat:'sp-oilStat', expense:'sp-expense', yearStat:'sp-yearStat' },
-  DETAIL_PAGES: { curMonth:'sp-curMonth', prevMonth:'sp-prevMonth', familyExp:'sp-familyExp', expAna:'sp-expAna', stockAna:'sp-stockAna' },
+  DETAIL_PAGES: { curMonth:'sp-curMonth', prevMonth:'sp-prevMonth', familyExp:'sp-familyExp' },
+  ANA_PAGES:    { expAna:'sp-expAna', stockAna:'sp-stockAna' },
   OV_PAGES:     { estInc:'sp-estInc', monthExp:'sp-monthExp', balance:'sp-balance', annualSum:'sp-annualSum', lineChart:'sp-lineChart' },
 
   _rowStore: [],
@@ -43,6 +46,7 @@ const APP = {
     this.bindSubTabs();
     this.bindTabSwipe();
     this.bindDetailSwipe();
+    this.bindAnaSwipe();
     this.bindOvBottomSwipe();
     this.bindCarBottomSwipe();
     this.bindRowClicks();
@@ -83,8 +87,12 @@ const APP = {
     } else if (this.tab === 'detail') {
       SHEETS.clearCache('data');
       SHEETS.clearCache('options');
-      ['curMonth','prevMonth','familyExp','expAna','stockAna'].forEach(s => this._loaded['det_' + s] = false);
+      ['curMonth','prevMonth','familyExp'].forEach(s => this._loaded['det_' + s] = false);
       this._loadDetailSub(this.subDetail);
+    } else if (this.tab === 'ana') {
+      SHEETS.clearCache('data');
+      ['expAna','stockAna'].forEach(s => this._loaded['ana_' + s] = false);
+      this._loadAnaSub(this.subAna);
     } else if (this.tab === 'overview') {
       const cacheMap = { estInc:['estimate','monthInc'], monthExp:'monthExp', balance:'balance', annualSum:'year', lineChart:'lineChart' };
       const keys=[].concat(cacheMap[this.subOv]||[]);
@@ -185,7 +193,7 @@ const APP = {
   },
 
   // ── Tab routing ──
-  _TAB_IDX:{ car:0, detail:1, overview:2 },
+  _TAB_IDX:{ car:0, detail:1, ana:2, overview:3 },
 
   bindTabs(){
     document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>this.switchTab(b.dataset.tab)));
@@ -197,24 +205,27 @@ const APP = {
     if(forceDefault){
       if(tab==='car')      this.subCar='oil';
       if(tab==='detail')   this.subDetail='curMonth';
+      if(tab==='ana')      this.subAna='expAna';
       if(tab==='overview') this.subOv='estInc';
     }
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
     document.getElementById('sub-car').style.display    =tab==='car'     ?'flex':'none';
     document.getElementById('sub-detail').style.display =tab==='detail'  ?'flex':'none';
+    document.getElementById('sub-ana').style.display    =tab==='ana'     ?'flex':'none';
     document.getElementById('sub-ov').style.display     =tab==='overview'?'flex':'none';
     this._updateFab();
-    const titles={car:'汽車',detail:'細項',overview:'收支總覽'};
+    const titles={car:'汽車',detail:'細項',ana:'分析',overview:'收支總覽'};
     document.getElementById('hdr-title').textContent=titles[tab]||'Home';
     const inner=document.getElementById('tab-swipe-inner');
     const idx=this._TAB_IDX[tab]??1;
     if(inner){
       if(!animate) inner.style.transition='none';
-      inner.style.transform=`translateX(${-idx*100/3}%)`;
+      inner.style.transform=`translateX(${-idx*100/4}%)`;
       if(!animate) setTimeout(()=>inner.style.transition='',0);
     }
     if      (tab==='car')      this._switchCarSub(this.subCar,true);
     else if (tab==='detail')   this._switchDetailSub(this.subDetail,true);
+    else if (tab==='ana')      this._switchAnaSub(this.subAna,true);
     else if (tab==='overview') this._switchOvSub(this.subOv,true);
   },
 
@@ -228,6 +239,7 @@ const APP = {
   bindSubTabs(){
     document.querySelectorAll('#sub-car .sub-tab').forEach(b=>b.addEventListener('click',()=>this._switchCarSub(b.dataset.sub)));
     document.querySelectorAll('#sub-detail .sub-tab').forEach(b=>b.addEventListener('click',()=>this._switchDetailSub(b.dataset.sub)));
+    document.querySelectorAll('#sub-ana .sub-tab').forEach(b=>b.addEventListener('click',()=>this._switchAnaSub(b.dataset.sub)));
     document.querySelectorAll('#sub-ov .sub-tab').forEach(b=>b.addEventListener('click',()=>this._switchOvSub(b.dataset.sub)));
   },
 
@@ -284,9 +296,9 @@ const APP = {
 
   // ── Cross-tab edge swipe ──
   bindTabSwipe(){
-    const TAB_ORDER=['car','detail','overview'];
+    const TAB_ORDER=['car','detail','ana','overview'];
     const self=this;
-    ['pg-car','pg-detail','pg-overview'].forEach(pgId=>{
+    ['pg-car','pg-detail','pg-ana','pg-overview'].forEach(pgId=>{
       const pg=document.getElementById(pgId);
       if(!pg) return;
       let startX=null,startY=0,dragging=false;
@@ -309,7 +321,7 @@ const APP = {
         if(inner){
           const ci=self._TAB_IDX[self.tab]??1;
           inner.style.transition='none';
-          inner.style.transform=`translateX(${-ci*100/3+(dx/pg.offsetWidth)*100/3}%)`;
+          inner.style.transform=`translateX(${-ci*100/4+(dx/pg.offsetWidth)*100/4}%)`;
         }
       },{passive:true});
       pg.addEventListener('touchend',e=>{
@@ -319,7 +331,7 @@ const APP = {
         const inner=document.getElementById('tab-swipe-inner');
         if(inner) inner.style.transition='';
         const ci=TAB_ORDER.indexOf(self.tab);
-        if(Math.abs(dx)<60){if(inner) inner.style.transform=`translateX(${-ci*100/3}%)`;return;}
+        if(Math.abs(dx)<60){if(inner) inner.style.transform=`translateX(${-ci*100/4}%)`;return;}
         if(dx<0) self.switchTab(TAB_ORDER[Math.min(ci+1,TAB_ORDER.length-1)],true,false);
         else     self.switchTab(TAB_ORDER[Math.max(ci-1,0)],true,false);
       },{passive:true});
@@ -376,6 +388,34 @@ const APP = {
       const subs=this.OV_SUBS, ci=subs.indexOf(this.subOv);
       if(dx<0&&ci<subs.length-1) this._switchOvSub(subs[ci+1]);
       else if(dx>0&&ci>0)        this._switchOvSub(subs[ci-1]);
+    },{passive:true});
+  },
+
+  // ── 分析: bottom-strip swipe to change sub-page ──
+  bindAnaSwipe(){
+    const pg=document.getElementById('pg-ana');
+    if(!pg) return;
+    let sx=0,sy=0,drag=false,inZone=false;
+    pg.addEventListener('touchstart',e=>{
+      if(e.touches.length!==1) return;
+      sx=e.touches[0].clientX; sy=e.touches[0].clientY; drag=false;
+      const r=pg.getBoundingClientRect();
+      inZone=(sy > r.bottom-60);
+    },{passive:true});
+    pg.addEventListener('touchmove',e=>{
+      if(e.touches.length!==1||!inZone) return;
+      const dx=Math.abs(e.touches[0].clientX-sx), dy=Math.abs(e.touches[0].clientY-sy);
+      if(!drag&&dy>dx+10) return;
+      if(!drag&&dx>10) drag=true;
+    },{passive:true});
+    pg.addEventListener('touchend',e=>{
+      if(!drag||!inZone){drag=false;inZone=false;return;}
+      drag=false;inZone=false;
+      const dx=e.changedTouches[0].clientX-sx;
+      if(Math.abs(dx)<55) return;
+      const subs=this.ANA_SUBS, ci=subs.indexOf(this.subAna);
+      if(dx<0&&ci<subs.length-1) this._switchAnaSub(subs[ci+1]);
+      else if(dx>0&&ci>0)        this._switchAnaSub(subs[ci-1]);
     },{passive:true});
   },
 
@@ -576,9 +616,22 @@ const APP = {
   // ════════════════════════════════════════
 
   _loadDetailSub(sub){
-    const fn={curMonth:()=>this.loadCurMonth(),prevMonth:()=>this.loadPrevMonth(),familyExp:()=>this.loadFamilyExp(),expAna:()=>this.loadDetailAna(),stockAna:()=>this.loadStockAna()};
+    const fn={curMonth:()=>this.loadCurMonth(),prevMonth:()=>this.loadPrevMonth(),familyExp:()=>this.loadFamilyExp()};
     fn[sub]?.();
     this._loaded['det_'+sub]=true;
+  },
+
+  _switchAnaSub(sub,load=true){
+    this.subAna=sub;
+    document.querySelectorAll('#sub-ana .sub-tab').forEach(b=>b.classList.toggle('active',b.dataset.sub===sub));
+    this._showSubPage(this.ANA_PAGES,sub);
+    if(load && !this._loaded['ana_'+sub]) this._loadAnaSub(sub);
+  },
+
+  _loadAnaSub(sub){
+    const fn={expAna:()=>this.loadDetailAna(),stockAna:()=>this.loadStockAna()};
+    fn[sub]?.();
+    this._loaded['ana_'+sub]=true;
   },
 
   async loadCurMonth(){
