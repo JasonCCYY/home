@@ -7,11 +7,11 @@ const APP = {
   subOv: 'estInc',
   CAR_SUBS:    ['oil','oilStat','expense','yearStat'],
   DETAIL_SUBS: ['curMonth','prevMonth','homeExp','familyExp'],
-  ANA_SUBS:    ['expAna','stockAna','utility'],
+  ANA_SUBS:    ['expAna','stockAna','water','elec'],
   OV_SUBS:     ['estInc','monthExp','balance','annualSum','lineChart'],
   CAR_PAGES:    { oil:'sp-oil', oilStat:'sp-oilStat', expense:'sp-expense', yearStat:'sp-yearStat' },
   DETAIL_PAGES: { curMonth:'sp-curMonth', prevMonth:'sp-prevMonth', homeExp:'sp-homeExp', familyExp:'sp-familyExp' },
-  ANA_PAGES:    { expAna:'sp-expAna', stockAna:'sp-stockAna', utility:'sp-utility' },
+  ANA_PAGES:    { expAna:'sp-expAna', stockAna:'sp-stockAna', water:'sp-water', elec:'sp-elec' },
   OV_PAGES:     { estInc:'sp-estInc', monthExp:'sp-monthExp', balance:'sp-balance', annualSum:'sp-annualSum', lineChart:'sp-lineChart' },
 
   _rowStore: [],
@@ -91,7 +91,7 @@ const APP = {
       this._loadDetailSub(this.subDetail);
     } else if (this.tab === 'ana') {
       SHEETS.clearCache('data');
-      ['expAna','stockAna','utility'].forEach(s => this._loaded['ana_' + s] = false);
+      ['expAna','stockAna','water','elec'].forEach(s => this._loaded['ana_' + s] = false);
       this._loadAnaSub(this.subAna);
     } else if (this.tab === 'overview') {
       const cacheMap = { estInc:['estimate','monthInc'], monthExp:'monthExp', balance:'balance', annualSum:'year', lineChart:'lineChart' };
@@ -629,7 +629,7 @@ const APP = {
   },
 
   _loadAnaSub(sub){
-    const fn={expAna:()=>this.loadDetailAna(),stockAna:()=>this.loadStockAna(),utility:()=>this.loadUtilityAna()};
+    const fn={expAna:()=>this.loadDetailAna(),stockAna:()=>this.loadStockAna(),water:()=>this.loadWaterAna(),elec:()=>this.loadElecAna()};
     fn[sub]?.();
     this._loaded['ana_'+sub]=true;
   },
@@ -990,19 +990,16 @@ const APP = {
     }catch(e){el.innerHTML=this.err(e);}
   },
 
-  // ── 水電統計（分閃耀/崑庭，分年分月）──
-  async loadUtilityAna(){
-    const el=document.getElementById('utility-ana-content');
-    if(!el) return;
+  // ── 水費/電費統計（分閃耀/崑庭，分年分月）──
+  async _renderUtilityTable(el, itemFilter){
     el.innerHTML=this.loading();
     try{
       const all=await SHEETS.loadData();
-      const recs=all.filter(r=>r.io==='Exp.'&&r.item==='水電');
+      const recs=all.filter(r=>r.io==='Exp.'&&r.item===itemFilter);
       if(!recs.length){el.innerHTML=this.empty();return;}
       const PROPS=['閃耀','崑庭'];
       const getProp=note=>PROPS.find(p=>String(note||'').includes(p))||null;
       const years=[...new Set(recs.map(r=>this.getYear(r.date)).filter(y=>y&&y.length===4))].sort();
-      // data[prop][year][month] = total
       const data={};
       PROPS.forEach(p=>{data[p]={};years.forEach(y=>{data[p][y]={};});});
       recs.forEach(r=>{
@@ -1013,13 +1010,12 @@ const APP = {
         if(!mo||!years.includes(yr)) return;
         data[prop][yr][mo]=(data[prop][yr][mo]||0)+this.num(r.amount);
       });
-      const BORDER_L='border-left:2.5px solid #b8cfe8;';
-      // Header: single row, prop name stacked over year
+      const BL='border-left:2.5px solid #b8cfe8;';
       let html=`<table class="frozen-1-table" style="width:100%"><thead><tr>
         <th style="min-width:36px">月</th>`;
-      PROPS.forEach((p,pi)=>{
+      PROPS.forEach((p)=>{
         years.forEach((y,yi)=>{
-          html+=`<th style="min-width:76px${yi===0?';'+BORDER_L:''}">
+          html+=`<th style="min-width:76px${yi===0?';'+BL:''}">
             <div style="font-size:.68rem;color:var(--muted);font-weight:500;margin-bottom:1px">${p}</div>
             <div>${y}</div>
           </th>`;
@@ -1030,28 +1026,36 @@ const APP = {
       const curMo=new Date().getMonth()+1;
       for(let mo=1;mo<=12;mo++){
         const hasAny=PROPS.some(p=>years.some(y=>(data[p][y][mo]||0)>0));
-        if(!hasAny&&years[years.length-1]===curYr&&mo>curMo) continue;
         if(!hasAny) continue;
         html+=`<tr><td style="color:var(--accent);font-weight:700;text-align:left">${mo}</td>`;
-        PROPS.forEach((p,pi)=>{
+        PROPS.forEach((p)=>{
           years.forEach((y,yi)=>{
             const v=data[p][y][mo]||0;
-            html+=`<td style="${yi===0?BORDER_L:''}">${v?'$'+v.toLocaleString():'-'}</td>`;
+            html+=`<td style="${yi===0?BL:''}">${v?'$'+v.toLocaleString():'-'}</td>`;
           });
         });
         html+=`</tr>`;
       }
-      // Total row
       html+=`<tr class="total-row"><td style="text-align:left">總和</td>`;
-      PROPS.forEach((p,pi)=>{
+      PROPS.forEach((p)=>{
         years.forEach((y,yi)=>{
           const total=Object.values(data[p][y]).reduce((s,v)=>s+v,0);
-          html+=`<td style="${yi===0?BORDER_L:''}">${total?'$'+total.toLocaleString():'-'}</td>`;
+          html+=`<td style="${yi===0?BL:''}">${total?'$'+total.toLocaleString():'-'}</td>`;
         });
       });
       html+=`</tr></tbody></table>`;
       el.innerHTML=html;
     }catch(e){el.innerHTML=this.err(e);}
+  },
+
+  async loadWaterAna(){
+    const el=document.getElementById('water-ana-content');
+    if(el) await this._renderUtilityTable(el,'水');
+  },
+
+  async loadElecAna(){
+    const el=document.getElementById('elec-ana-content');
+    if(el) await this._renderUtilityTable(el,'電');
   },
 
   // ════════════════════════════════════════
