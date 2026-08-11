@@ -132,14 +132,14 @@ const SHEETS = {
   async loadOilRecords() {
     const load = async () => {
       const rows = await this.read(this.GAS_ID, this.GAS.oil, 'A2:M500');
-      return rows.filter(r=>r[0]).map((r,i)=>({
+      return rows.map((r,i)=>!r[0]?null:{
         _row: i+2,
         date: r[0]||'', actual: r[1]||'', daily: r[2]||'',
         selfDisc: r[3]||'', cardDisc: r[4]||'', totalDisc: r[5]||'',
         liters: r[6]||'', totalKm: r[7]||'', km: r[8]||'',
         efficiency: r[9]||'', costPerKm: r[10]||'', discPerL: r[11]||'',
         plan: r[12]||''
-      })).reverse();
+      }).filter(Boolean).reverse();
     };
     return this.cached('oil', load);
   },
@@ -155,11 +155,11 @@ const SHEETS = {
   async loadGasExpense() {
     const load = async () => {
       const rows = await this.read(this.GAS_ID, this.GAS.expense, 'A2:F50');
-      return rows.filter(r=>r[0]).map((r,i)=>({
+      return rows.map((r,i)=>!r[0]?null:{
         _row: i+2,
         date: r[0]||'', cat: r[1]||'', item: r[2]||'',
         amount: r[3]||'', note: r[4]||'', mileage: r[5]||''
-      })).reverse();
+      }).filter(Boolean).reverse();
     };
     return this.cached('gasExp', load);
   },
@@ -175,11 +175,11 @@ const SHEETS = {
   async loadMaintain() {
     const load = async () => {
       const rows = await this.read(this.GAS_ID, this.GAS.maintain, 'A2:E30');
-      return rows.filter(r=>r[0]).map((r,i)=>({
+      return rows.map((r,i)=>!r[0]?null:{
         _row: i+2,
         date: r[0]||'', item: r[1]||'', amount: r[2]||'',
         note: r[3]||'', mileage: r[4]||''
-      })).reverse();
+      }).filter(Boolean).reverse();
     };
     return this.cached('maintain', load);
   },
@@ -191,12 +191,12 @@ const SHEETS = {
   async loadData() {
     const load = async () => {
       const rows = await this.read(this.IN_ID, this.IN.data, 'A2:G2000');
-      return rows.filter(r=>r[0]).map((r,i)=>({
+      return rows.map((r,i)=>!r[0]?null:{
         _row: i+2,
         date: r[0]||'', amount: r[1]||'', io: r[2]||'',
         item: r[3]||'', note: r[4]||'', usageId: r[5]||'',
         counted: r[6]||'TRUE'
-      })).reverse();
+      }).filter(Boolean).reverse();
     };
     return this.cached('data', load);
   },
