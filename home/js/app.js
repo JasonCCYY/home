@@ -79,10 +79,8 @@ const APP = {
   refresh(){
     // 只清除當前 Tab 的快取，保留其他 Tab 已預載的資料
     if (this.tab === 'car') {
-      const cacheMap = { oil:'oil', oilStat:'oilStat', expense:'gasExp', yearStat:'yearStat' };
-      const key = cacheMap[this.subCar];
-      if (key) SHEETS.clearCache(key);
-      this._loaded['car_' + this.subCar] = false;
+      ['oil','oilStat','gasExp','yearStat'].forEach(k => SHEETS.clearCache(k));
+      this.CAR_SUBS.forEach(s => { this._loaded['car_' + s] = false; });
       this._loadCarSub(this.subCar);
     } else if (this.tab === 'detail') {
       SHEETS.clearCache('data');
@@ -1577,6 +1575,7 @@ const APP = {
       this.closeModal('modal-add-oil');
       this.toast('✅ 已儲存');
       this._maxOilKm=Math.max(this._maxOilKm,this.num(d.totalKm));
+      ['oilStat','yearStat'].forEach(k => { SHEETS.clearCache(k); this._loaded['car_'+k]=false; });
       this.loadOil();
     }catch(e){this.toast('❌ '+e.message);}
   },
@@ -1601,7 +1600,7 @@ const APP = {
 
   async _deleteOil(r){
     if(!confirm('確定刪除這筆加油記錄？')) return;
-    try{await SHEETS.deleteOilRow(r._row);this.closeModal('modal-oil-detail');this.toast('🗑️ 已刪除');this.loadOil();}
+    try{await SHEETS.deleteOilRow(r._row);this.closeModal('modal-oil-detail');this.toast('🗑️ 已刪除');['oilStat','yearStat'].forEach(k=>{SHEETS.clearCache(k);this._loaded['car_'+k]=false;});this.loadOil();}
     catch(e){this.toast('❌ '+e.message);}
   },
 
