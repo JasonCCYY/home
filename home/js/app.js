@@ -1643,10 +1643,11 @@ const APP = {
   async saveExpense(){
     const date=document.getElementById('exp-date').value.replace(/-/g,'/');
     const item=document.getElementById('exp-item').value.trim();
-    const amount=document.getElementById('exp-amount').value;
-    if(!date||!item||!amount){this.toast('請填入日期、項目和金額');return;}
+    const amountRaw=document.getElementById('exp-amount').value.replace(/[^0-9]/g,'');
+    if(!date||!item||!amountRaw){this.toast('請填入日期、項目和金額');return;}
     try{
       this.toast('儲存中…');
+      const amount=Number(amountRaw).toLocaleString();
       const rawMileage=document.getElementById('exp-mileage').value.replace(/[^0-9]/g,'');
       const row={date,cat:this._expCat,item,amount,note:document.getElementById('exp-note').value,mileage:rawMileage};
       if(this._editExpRow){
