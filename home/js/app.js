@@ -1783,12 +1783,13 @@ const APP = {
 
   async saveData(){
     const date=document.getElementById('data-date').value.replace(/-/g,'/');
-    const amount=document.getElementById('data-amount').value.replace(/,/g,'');
+    const amountRaw=document.getElementById('data-amount').value.replace(/[^0-9]/g,'');
     const note=document.getElementById('data-note').value||this._dataNoteSelected;
     const io=this._dataIOSelected, item=this._dataItemSelected;
-    if(!date||!amount||!item){this.toast('請填入日期、金額和項目');return;}
+    if(!date||!amountRaw||!item){this.toast('請填入日期、金額和項目');return;}
     try{
       this.toast('儲存中…');
+      const amount=Number(amountRaw).toLocaleString();
       const counted=this._dataCounted||'TRUE';
       if(this._editDataRow) await SHEETS.updateData(this._editDataRow,{date,amount,io,item,note,counted});
       else await SHEETS.addData({date,amount,io,item,note,counted});
