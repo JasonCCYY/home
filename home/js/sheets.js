@@ -73,7 +73,7 @@ const SHEETS = {
   },
 
   async append(sheetId, tab, rows) {
-    const url = `${this.BASE}/${sheetId}/values/${encodeURIComponent(tab + '!A1')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+    const url = `${this.BASE}/${sheetId}/values/${encodeURIComponent(tab + '!A1')}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
     const r = await fetch(url, { method: 'POST', headers: { ...this.hdrs(), 'Content-Type': 'application/json' }, body: JSON.stringify({ values: rows }) });
     if (!r.ok) {
       if (r.status === 401) { AUTH.handleExpired(); throw new Error('登入過期，重新驗證中'); }
@@ -83,7 +83,7 @@ const SHEETS = {
   },
 
   async put(sheetId, range, values) {
-    const url = `${this.BASE}/${sheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+    const url = `${this.BASE}/${sheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`;
     const r = await fetch(url, { method: 'PUT', headers: { ...this.hdrs(), 'Content-Type': 'application/json' }, body: JSON.stringify({ values }) });
     if (!r.ok) {
       if (r.status === 401) { AUTH.handleExpired(); throw new Error('登入過期，重新驗證中'); }
@@ -100,6 +100,13 @@ const SHEETS = {
   },
 
   uid() { return Math.random().toString(36).substring(2, 10); },
+  // Convert date string (2026/08/11 or 2026-08-11) to Google Sheets serial number.
+  // Sheets epoch = Dec 30 1899; Unix epoch = Jan 1 1970 = serial 25569.
+  _dateSer(s) {
+    const p = String(s).split(/[\/\-]/);
+    if (p.length !== 3) return s;
+    return Math.round(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000) + 25569;
+  },
   nowDate() {
     const n = new Date();
     return `${n.getFullYear()}/${n.getMonth()+1}/${n.getDate()}`;
@@ -278,7 +285,7 @@ const SHEETS = {
 
   // 新增收支記錄
   async addData(d) {
-    const row = [d.date, d.amount, d.io, d.item, d.note||'', this.uid(), d.counted||'TRUE'];
+    const row = [this._dateSer(d.date), d.amount, d.io, d.item, d.note||'', this.uid(), d.counted||'TRUE'];
     const r = await this.append(this.IN_ID, this.IN.data, [row]);
     this.clearCache('data');
     return r;
@@ -286,13 +293,13 @@ const SHEETS = {
 
   // 更新收支記錄
   async updateData(row, d) {
-    await this.put(this.IN_ID, `${this.IN.data}!A${row}:G${row}`, [[d.date, d.amount, d.io, d.item, d.note||'', '', d.counted||'TRUE']]);
+    await this.put(this.IN_ID, `${this.IN.data}!A${row}:G${row}`, [[this._dateSer(d.date), d.amount, d.io, d.item, d.note||'', '', d.counted||'TRUE']]);
     this.clearCache('data');
   },
 
   // 新增加油記錄
   async addOil(d) {
-    const row = [d.date, d.actual, d.daily, d.selfDisc||'', d.cardDisc||'', d.totalDisc||'',
+    const row = [this._dateSer(d.date), d.actual, d.daily, d.selfDisc||'', d.cardDisc||'', d.totalDisc||'',
                  d.liters||'', d.totalKm||'', d.km||'', d.efficiency||'', d.costPerKm||'', d.discPerL||'', d.plan||''];
     const r = await this.append(this.GAS_ID, this.GAS.oil, [row]);
     this.clearCache('oil');
@@ -302,14 +309,14 @@ const SHEETS = {
   // 更新加油記錄
   async updateOil(row, d) {
     await this.put(this.GAS_ID, `${this.GAS.oil}!A${row}:M${row}`,
-      [[d.date, d.actual, d.daily, d.selfDisc||'', d.cardDisc||'', d.totalDisc||'',
+      [[this._dateSer(d.date), d.actual, d.daily, d.selfDisc||'', d.cardDisc||'', d.totalDisc||'',
         d.liters||'', d.totalKm||'', d.km||'', d.efficiency||'', d.costPerKm||'', d.discPerL||'', d.plan||'']]);
     this.clearCache('oil');
   },
 
   // 新增開支
   async addGasExpense(d) {
-    const row = [d.date, d.cat, d.item, d.amount, d.note||'', d.mileage||''];
+    const row = [this._dateSer(d.date), d.cat, d.item, d.amount, d.note||'', d.mileage||''];
     const r = await this.append(this.GAS_ID, this.GAS.expense, [row]);
     this.clearCache('gasExp');
     return r;
@@ -332,7 +339,7 @@ const SHEETS = {
   },
 
   async updateGasExpRow(row, r) {
-    const vals = [[r.date, r.cat, r.item, r.amount, r.note||'', r.mileage||'']];
+    const vals = [[this._dateSer(r.date), r.cat, r.item, r.amount, r.note||'', r.mileage||'']];
     await this.put(this.GAS_ID, `${this.GAS.expense}!A${row}:F${row}`, vals);
     this.clearCache('gasExp');
   },
