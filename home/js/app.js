@@ -148,6 +148,7 @@ const APP = {
     return (n/10000).toFixed(1);
   },
   todayISO(){ return new Date().toISOString().split('T')[0]; },
+  _toDateInput(d){ const p=String(d||'').split(/[\/\-]/); return p.length===3?`${p[0]}-${p[1].padStart(2,'0')}-${p[2].padStart(2,'0')}`:''; },
   nowMonth(){
     const n=new Date();
     return `${n.getFullYear()}/${String(n.getMonth()+1).padStart(2,'0')}`;
@@ -1512,7 +1513,7 @@ const APP = {
   _openOilModal(r=null){
     this._editOilRow=r?r._row:null;
     document.getElementById('modal-oil-title').textContent=r?'修改加油記錄':'新增加油記錄';
-    document.getElementById('oil-date').value=r?r.date.replace(/\//g,'-'):this.todayISO();
+    document.getElementById('oil-date').value=r?this._toDateInput(r.date):this.todayISO();
     document.getElementById('oil-daily').value=r?r.daily:'';
     document.getElementById('oil-liters').value=r?r.liters:'';
     document.getElementById('oil-totalKm').value=r?String(r.totalKm).replace(/,/g,''):'';
@@ -1609,7 +1610,7 @@ const APP = {
     this._expCat=cat;
     this._editExpRow=r?r._row:null;
     document.getElementById('modal-add-expense').querySelector('.modal-title').textContent=r?'修改開支記錄':'新增開支記錄';
-    document.getElementById('exp-date').value=r?(r.date.replace(/\//g,'-')):this.todayISO();
+    document.getElementById('exp-date').value=r?this._toDateInput(r.date):this.todayISO();
     document.getElementById('exp-amount').value=r?String(r.amount).replace(/[^0-9.]/g,''):'';
     document.getElementById('exp-note').value=r?r.note||'':'';
     document.getElementById('exp-mileage').value=r?String(r.mileage||'').replace(/[^0-9]/g,''):'';
@@ -1692,7 +1693,7 @@ const APP = {
     this._editDataRow=r?r._row:null;
     document.getElementById('modal-data-title').textContent=r?'修改收支記錄':'新增收支記錄';
     if(r){
-      document.getElementById('data-date').value=r.date.replace(/\//g,'-');
+      document.getElementById('data-date').value=this._toDateInput(r.date);
       document.getElementById('data-amount').value=String(r.amount).replace(/,/g,'');
       document.getElementById('data-note').value=r.note||'';
       this._dataIOSelected=r.io; this._dataItemSelected=r.item; this._dataNoteSelected=r.note||'';
