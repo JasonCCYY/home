@@ -285,7 +285,7 @@ const SHEETS = {
 
   // 新增收支記錄
   async addData(d) {
-    const row = [this._dateSer(d.date), d.amount, d.io, d.item, d.note||'', this.uid(), d.counted||'TRUE'];
+    const row = [d.date, d.amount, d.io, d.item, d.note||'', this.uid(), d.counted||'TRUE'];
     const r = await this.append(this.IN_ID, this.IN.data, [row]);
     this.clearCache('data');
     return r;
@@ -293,13 +293,13 @@ const SHEETS = {
 
   // 更新收支記錄
   async updateData(row, d) {
-    await this.put(this.IN_ID, `${this.IN.data}!A${row}:G${row}`, [[this._dateSer(d.date), d.amount, d.io, d.item, d.note||'', '', d.counted||'TRUE']]);
+    await this.put(this.IN_ID, `${this.IN.data}!A${row}:G${row}`, [[d.date, d.amount, d.io, d.item, d.note||'', '', d.counted||'TRUE']]);
     this.clearCache('data');
   },
 
   // 新增加油記錄
   async addOil(d) {
-    const row = [this._dateSer(d.date), d.actual, d.daily, d.selfDisc||'', d.cardDisc||'', d.totalDisc||'',
+    const row = [d.date, d.actual, d.daily, d.selfDisc||'', d.cardDisc||'', d.totalDisc||'',
                  d.liters||'', d.totalKm||'', d.km||'', d.efficiency||'', d.costPerKm||'', d.discPerL||'', d.plan||''];
     const r = await this.append(this.GAS_ID, this.GAS.oil, [row]);
     this.clearCache('oil');
@@ -309,14 +309,14 @@ const SHEETS = {
   // 更新加油記錄
   async updateOil(row, d) {
     await this.put(this.GAS_ID, `${this.GAS.oil}!A${row}:M${row}`,
-      [[this._dateSer(d.date), d.actual, d.daily, d.selfDisc||'', d.cardDisc||'', d.totalDisc||'',
+      [[d.date, d.actual, d.daily, d.selfDisc||'', d.cardDisc||'', d.totalDisc||'',
         d.liters||'', d.totalKm||'', d.km||'', d.efficiency||'', d.costPerKm||'', d.discPerL||'', d.plan||'']]);
     this.clearCache('oil');
   },
 
   // 新增開支
   async addGasExpense(d) {
-    const row = [this._dateSer(d.date), d.cat, d.item, d.amount, d.note||'', d.mileage||''];
+    const row = [d.date, d.cat, d.item, d.amount, d.note||'', d.mileage||''];
     const r = await this.append(this.GAS_ID, this.GAS.expense, [row]);
     this.clearCache('gasExp');
     return r;
@@ -339,7 +339,7 @@ const SHEETS = {
   },
 
   async updateGasExpRow(row, r) {
-    const vals = [[this._dateSer(r.date), r.cat, r.item, r.amount, r.note||'', r.mileage||'']];
+    const vals = [[r.date, r.cat, r.item, r.amount, r.note||'', r.mileage||'']];
     await this.put(this.GAS_ID, `${this.GAS.expense}!A${row}:F${row}`, vals);
     this.clearCache('gasExp');
   },
