@@ -285,7 +285,7 @@ const SHEETS = {
 
   // 新增收支記錄
   async addData(d) {
-    const row = [d.date, d.amount, d.io, d.item, d.note||'', this.uid(), d.counted||'TRUE'];
+    const row = [d.date, d.amount, d.io, d.item, d.note||'', this.uid(), d.counted!=='FALSE'];
     const r = await this.append(this.IN_ID, this.IN.data, [row]);
     this.clearCache('data');
     return r;
@@ -293,7 +293,7 @@ const SHEETS = {
 
   // 更新收支記錄
   async updateData(row, d) {
-    await this.put(this.IN_ID, `${this.IN.data}!A${row}:G${row}`, [[d.date, d.amount, d.io, d.item, d.note||'', '', d.counted||'TRUE']]);
+    await this.put(this.IN_ID, `${this.IN.data}!A${row}:G${row}`, [[d.date, d.amount, d.io, d.item, d.note||'', '', d.counted!=='FALSE']]);
     this.clearCache('data');
   },
 
