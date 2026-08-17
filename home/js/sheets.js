@@ -73,7 +73,7 @@ const SHEETS = {
   },
 
   async append(sheetId, tab, rows) {
-    const url = `${this.BASE}/${sheetId}/values/${encodeURIComponent(tab + '!A1')}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
+    const url = `${this.BASE}/${sheetId}/values/${encodeURIComponent(tab + '!A1')}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
     const r = await fetch(url, { method: 'POST', headers: { ...this.hdrs(), 'Content-Type': 'application/json' }, body: JSON.stringify({ values: rows }) });
     if (!r.ok) {
       if (r.status === 401) { AUTH.handleExpired(); throw new Error('登入過期，重新驗證中'); }
@@ -83,7 +83,7 @@ const SHEETS = {
   },
 
   async put(sheetId, range, values) {
-    const url = `${this.BASE}/${sheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`;
+    const url = `${this.BASE}/${sheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
     const r = await fetch(url, { method: 'PUT', headers: { ...this.hdrs(), 'Content-Type': 'application/json' }, body: JSON.stringify({ values }) });
     if (!r.ok) {
       if (r.status === 401) { AUTH.handleExpired(); throw new Error('登入過期，重新驗證中'); }

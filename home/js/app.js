@@ -1648,7 +1648,7 @@ const APP = {
     if(!date||!item||!amountRaw){this.toast('請填入日期、項目和金額');return;}
     try{
       this.toast('儲存中…');
-      const amount=Number(amountRaw).toLocaleString();
+      const amount=amountRaw;
       const rawMileage=document.getElementById('exp-mileage').value.replace(/[^0-9]/g,'');
       const row={date,cat:this._expCat,item,amount,note:document.getElementById('exp-note').value,mileage:rawMileage};
       if(this._editExpRow){
@@ -1790,7 +1790,7 @@ const APP = {
     if(!date||!amountRaw||!item){this.toast('請填入日期、金額和項目');return;}
     try{
       this.toast('儲存中…');
-      const amount=Number(amountRaw).toLocaleString();
+      const amount=amountRaw;
       const counted=this._dataCounted||'TRUE';
       if(this._editDataRow) await SHEETS.updateData(this._editDataRow,{date,amount,io,item,note,counted});
       else await SHEETS.addData({date,amount,io,item,note,counted});
