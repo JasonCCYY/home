@@ -197,12 +197,12 @@ const SHEETS = {
 
   async loadData() {
     const load = async () => {
-      const rows = await this.read(this.IN_ID, this.IN.data, 'A2:G2000');
+      const rows = await this.read(this.IN_ID, this.IN.data, 'A2:F2000');
       return rows.map((r,i)=>!r[0]?null:{
         _row: i+2,
         date: r[0]||'', amount: r[1]||'', io: r[2]||'',
-        item: r[3]||'', note: r[4]||'', usageId: r[5]||'',
-        counted: r[6]||'TRUE'
+        item: r[3]||'', note: r[4]||'',
+        counted: r[5]||'TRUE'
       }).filter(Boolean).reverse();
     };
     return this.cached('data', load);
@@ -285,7 +285,7 @@ const SHEETS = {
 
   // 新增收支記錄
   async addData(d) {
-    const row = [this._dateFml(d.date), d.amount, d.io, d.item, d.note||'', this.uid(), d.counted!=='FALSE'];
+    const row = [this._dateFml(d.date), d.amount, d.io, d.item, d.note||'', d.counted!=='FALSE'];
     const r = await this.append(this.IN_ID, this.IN.data, [row]);
     this.clearCache('data');
     return r;
@@ -293,7 +293,7 @@ const SHEETS = {
 
   // 更新收支記錄
   async updateData(row, d) {
-    await this.put(this.IN_ID, `${this.IN.data}!A${row}:G${row}`, [[this._dateFml(d.date), d.amount, d.io, d.item, d.note||'', '', d.counted!=='FALSE']]);
+    await this.put(this.IN_ID, `${this.IN.data}!A${row}:F${row}`, [[this._dateFml(d.date), d.amount, d.io, d.item, d.note||'', d.counted!=='FALSE']]);
     this.clearCache('data');
   },
 
@@ -324,7 +324,7 @@ const SHEETS = {
 
   // 刪除行（清空）
   async deleteDataRow(row) {
-    await this.clearRow(this.IN_ID, this.IN.data, row, 'A', 'G');
+    await this.clearRow(this.IN_ID, this.IN.data, row, 'A', 'F');
     this.clearCache('data');
   },
 
