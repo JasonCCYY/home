@@ -148,7 +148,14 @@ const APP = {
     return (n/10000).toFixed(1);
   },
   todayISO(){ return new Date().toISOString().split('T')[0]; },
-  _toDateInput(d){ const p=String(d||'').split(/[\/\-]/); return p.length===3?`${p[0]}-${p[1].padStart(2,'0')}-${p[2].padStart(2,'0')}`:''; },
+  _toDateInput(d){
+    const s=String(d||'');
+    // Chinese format: 2025年1月8日
+    const c=s.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日?$/);
+    if(c) return `${c[1]}-${c[2].padStart(2,'0')}-${c[3].padStart(2,'0')}`;
+    const p=s.split(/[\/\-]/);
+    return p.length===3?`${p[0]}-${p[1].padStart(2,'0')}-${p[2].padStart(2,'0')}`:'';
+  },
   nowMonth(){
     const n=new Date();
     return `${n.getFullYear()}/${String(n.getMonth()+1).padStart(2,'0')}`;
