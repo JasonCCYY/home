@@ -1708,7 +1708,10 @@ const APP = {
     this._editDataRow=r?r._row:null;
     document.getElementById('modal-data-title').textContent=r?'修改收支記錄':'新增收支記錄';
     if(r){
-      document.getElementById('data-date').value=this._toDateInput(r.date);
+      const _dbgDate=this._toDateInput(r.date);
+      console.log('[debug] r.date raw=',r.date,'→',_dbgDate);
+      document.getElementById('data-date').value=_dbgDate;
+      document.getElementById('data-date').placeholder=r.date||'(empty)';
       document.getElementById('data-amount').value=String(r.amount).replace(/,/g,'');
       document.getElementById('data-note').value=r.note||'';
       this._dataIOSelected=r.io; this._dataItemSelected=r.item; this._dataNoteSelected=r.note||'';
