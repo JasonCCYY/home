@@ -149,7 +149,7 @@ const APP = {
   },
   todayISO(){ return new Date().toISOString().split('T')[0]; },
   _toDateInput(d){
-    const s=String(d||'');
+    const s=String(d||'').trim();
     // =DATE(2026,8,20) formula string (API may return formula text)
     const f=s.match(/^=DATE\((\d+),(\d+),(\d+)\)$/i);
     if(f) return `${f[1]}-${f[2].padStart(2,'0')}-${f[3].padStart(2,'0')}`;
@@ -1708,9 +1708,7 @@ const APP = {
     this._editDataRow=r?r._row:null;
     document.getElementById('modal-data-title').textContent=r?'修改收支記錄':'新增收支記錄';
     if(r){
-      const _dbgDate=this._toDateInput(r.date);
-      alert('[debug] r.date='+JSON.stringify(r.date)+'\n→'+_dbgDate);
-      document.getElementById('data-date').value=_dbgDate;
+      document.getElementById('data-date').value=this._toDateInput(r.date);
       document.getElementById('data-amount').value=String(r.amount).replace(/,/g,'');
       document.getElementById('data-note').value=r.note||'';
       this._dataIOSelected=r.io; this._dataItemSelected=r.item; this._dataNoteSelected=r.note||'';
