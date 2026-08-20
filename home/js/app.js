@@ -150,9 +150,17 @@ const APP = {
   todayISO(){ return new Date().toISOString().split('T')[0]; },
   _toDateInput(d){
     const s=String(d||'');
+    // =DATE(2026,8,20) formula string (API may return formula text)
+    const f=s.match(/^=DATE\((\d+),(\d+),(\d+)\)$/i);
+    if(f) return `${f[1]}-${f[2].padStart(2,'0')}-${f[3].padStart(2,'0')}`;
     // Chinese format: 2025年1月8日
     const c=s.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日?$/);
     if(c) return `${c[1]}-${c[2].padStart(2,'0')}-${c[3].padStart(2,'0')}`;
+    // Sheets serial number (e.g. 46253 = 2026/08/18)
+    if(/^\d{5}$/.test(s)){
+      const dt=new Date(Math.round((+s-25569)*86400000));
+      return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth()+1).padStart(2,'0')}-${String(dt.getUTCDate()).padStart(2,'0')}`;
+    }
     const p=s.split(/[\/\-]/);
     return p.length===3?`${p[0]}-${p[1].padStart(2,'0')}-${p[2].padStart(2,'0')}`:'';
   },

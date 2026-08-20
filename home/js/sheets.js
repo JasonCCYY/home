@@ -54,9 +54,9 @@ const SHEETS = {
   },
   // ── Migration: clear old caches with wrong ranges ──
   _migrate() {
-    const VER = 'v4';
+    const VER = 'v5';
     if (localStorage.getItem('home__ver') !== VER) {
-      ['monthInc','monthExp','year'].forEach(k => this.clearCache(k));
+      ['monthInc','monthExp','year','data'].forEach(k => this.clearCache(k));
       localStorage.setItem('home__ver', VER);
     }
   },
