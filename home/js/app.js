@@ -1252,16 +1252,6 @@ const APP = {
       const overallY=py(overallAvg).toFixed(1);
       svg+=`<line x1="${PAD.l}" y1="${overallY}" x2="${W-PAD.r}" y2="${overallY}" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3"/>`;
       svg+=`<text x="${W-PAD.r+2}" y="${(Number(overallY)-3).toFixed(1)}" font-size="9" fill="#f59e0b" font-weight="600">${overallAvgWan}</text>`;
-      // Fiscal year text labels only (no line)
-      fySorted.forEach((fy,idx)=>{
-        const grp=fyMap[fy];
-        const fyAvg=grp.sum/grp.indices.length;
-        const fyY=py(fyAvg).toFixed(1);
-        const x2=px(Math.max(...grp.indices)).toFixed(1);
-        const col=FY_COLORS[idx%FY_COLORS.length];
-        const fyAvgWan=(fyAvg/10000).toFixed(1);
-        svg+=`<text x="${(Number(x2)+3).toFixed(1)}" y="${(Number(fyY)+4).toFixed(1)}" font-size="8.5" fill="${col}" font-weight="700">V${idx+1} ${fyAvgWan}</text>`;
-      });
       // Area fill
       const lx=px(vals.length-1).toFixed(1);
       svg+=`<path d="${path} L${lx},${(PAD.t+ch).toFixed(1)} L${PAD.l},${(PAD.t+ch).toFixed(1)} Z" fill="rgba(26,127,212,.08)"/>`;
