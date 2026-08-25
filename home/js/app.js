@@ -1223,19 +1223,24 @@ const APP = {
     try{
       const rows=await SHEETS.loadLineChart();
       if(rows.length<2){el.innerHTML=this.empty();return;}
-      const hdr=rows[0]||[];
       const data=rows.slice(1).filter(r=>r[0]&&r[1]);
       const vals=data.map(r=>Number(String(r[1]||0).replace(/[,\s]/g,'')));
-      const avg=Number(String(hdr[2]||'0').replace(/[^0-9]/g,''));
-      const avgWan=(avg/10000).toFixed(1);
-      const maxV=Math.max(...vals,avg)*1.18; // extra room for dot labels
-      const minV=Math.min(...vals,avg)*0.85;
+      // Overall average (全部)
+      const overallAvg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
+      const overallAvgWan=(overallAvg/10000).toFixed(1);
+      // Fiscal year grouping (starts Aug each year; ROC = Western - 1911)
+      const getFY=s=>{ const p=String(s).split('/'); const y=+p[0],m=+p[1]; return m>=8?y:y-1; };
+      const fyMap={};
+      data.forEach((r,i)=>{ const fy=getFY(r[0]); if(!fyMap[fy]) fyMap[fy]={indices:[],sum:0}; fyMap[fy].indices.push(i); fyMap[fy].sum+=vals[i]; });
+      const fySorted=Object.keys(fyMap).map(Number).sort();
+      const FY_COLORS=['#10b981','#8b5cf6','#06b6d4','#ef4444'];
+      const maxV=Math.max(...vals,overallAvg)*1.18;
+      const minV=Math.min(...vals,overallAvg)*0.85;
       const W=340,H=190,PAD={l:52,r:20,t:28,b:34};
       const cw=W-PAD.l-PAD.r,ch=H-PAD.t-PAD.b;
       const px=i=>PAD.l+i*(cw/Math.max(vals.length-1,1));
       const py=v=>PAD.t+ch-(v-minV)/(maxV-minV||1)*ch;
       let path=vals.map((v,i)=>`${i===0?'M':'L'}${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(' ');
-      const avgY=py(avg).toFixed(1);
       let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:${H}px;overflow:visible">`;
       // Grid
       [0,.25,.5,.75,1].forEach(t=>{
@@ -1243,9 +1248,23 @@ const APP = {
         svg+=`<line x1="${PAD.l}" y1="${y.toFixed(1)}" x2="${W-PAD.r}" y2="${y.toFixed(1)}" stroke="#e4ecf4" stroke-width="1"/>`;
         svg+=`<text x="${PAD.l-4}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="9" fill="#8fa3b8">${(v/10000).toFixed(0)}萬</text>`;
       });
-      // Avg line + label
-      svg+=`<line x1="${PAD.l}" y1="${avgY}" x2="${W-PAD.r}" y2="${avgY}" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3"/>`;
-      svg+=`<text x="${W-PAD.r+2}" y="${(Number(avgY)-3).toFixed(1)}" font-size="9" fill="#f59e0b" font-weight="600">${avgWan}</text>`;
+      // Line 1: Overall average (orange, full width)
+      const overallY=py(overallAvg).toFixed(1);
+      svg+=`<line x1="${PAD.l}" y1="${overallY}" x2="${W-PAD.r}" y2="${overallY}" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3"/>`;
+      svg+=`<text x="${W-PAD.r+2}" y="${(Number(overallY)-3).toFixed(1)}" font-size="9" fill="#f59e0b" font-weight="600">${overallAvgWan}</text>`;
+      // Line 2: Per-fiscal-year segment averages
+      fySorted.forEach((fy,idx)=>{
+        const grp=fyMap[fy];
+        const fyAvg=grp.sum/grp.indices.length;
+        const fyY=py(fyAvg).toFixed(1);
+        const x1=px(Math.min(...grp.indices)).toFixed(1);
+        const x2=px(Math.max(...grp.indices)).toFixed(1);
+        const col=FY_COLORS[idx%FY_COLORS.length];
+        const label='V'+(idx+1);
+        const fyAvgWan=(fyAvg/10000).toFixed(1);
+        svg+=`<line x1="${x1}" y1="${fyY}" x2="${x2}" y2="${fyY}" stroke="${col}" stroke-width="2" stroke-dasharray="3,2"/>`;
+        svg+=`<text x="${(Number(x2)+3).toFixed(1)}" y="${(Number(fyY)+4).toFixed(1)}" font-size="8.5" fill="${col}" font-weight="700">${label}${fyAvgWan}</text>`;
+      });
       // Area fill
       const lx=px(vals.length-1).toFixed(1);
       svg+=`<path d="${path} L${lx},${(PAD.t+ch).toFixed(1)} L${PAD.l},${(PAD.t+ch).toFixed(1)} Z" fill="rgba(26,127,212,.08)"/>`;
@@ -1283,7 +1302,10 @@ const APP = {
       let html=`<div style="padding:16px;background:white;margin-bottom:1px">
         <div style="font-size:.9rem;font-weight:700;color:var(--txt2);margin-bottom:10px">工作收入趨勢（萬元）</div>
         ${svg}
-        <div style="font-size:.75rem;color:var(--muted);margin-top:4px">虛線為近10個月平均 ${avgWan}萬</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:4px">
+          <span style="color:#f59e0b;font-weight:600">─ ─</span> 全部平均 ${overallAvgWan}萬
+          ${fySorted.map((fy,i)=>`<span style="color:${FY_COLORS[i%FY_COLORS.length]};font-weight:600">─ ─</span> V${i+1}=${fy-1911}年8月起`).join('　')}
+        </div>
       </div>`;
       html+=`<table style="width:100%;border-collapse:collapse;margin-bottom:80px">
         <thead><tr>
