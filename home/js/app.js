@@ -1291,7 +1291,7 @@ const APP = {
         ${svg}
         <div style="font-size:.75rem;color:var(--muted);margin-top:6px;line-height:1.8">
           <span style="color:#f59e0b;font-weight:600">─ ─</span> 平均 ${overallAvgWan}萬元<br>
-          ${fySorted.map((fy,i)=>{ const roc=fy-1911; const fyAvg=(fyMap[fy].sum/fyMap[fy].indices.length/10000).toFixed(1); return `V${i+1}: ${roc}-${roc+1}/8月 ${fyAvg}萬元`; }).join('<br>')}
+          ${fySorted.map((fy,i)=>{ const roc=fy-1911; const fyAvg=(fyMap[fy].sum/fyMap[fy].indices.length/10000).toFixed(1); return `V${i+1}: ${roc}/8月-${roc+1}/7月 ${fyAvg}萬元`; }).join('<br>')}
         </div>
       </div>`;
       html+=`<table style="width:100%;border-collapse:collapse;margin-bottom:80px">
