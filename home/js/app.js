@@ -1289,9 +1289,9 @@ const APP = {
       let html=`<div style="padding:16px;background:white;margin-bottom:1px">
         <div style="font-size:.9rem;font-weight:700;color:var(--txt2);margin-bottom:10px">工作收入趨勢（萬元）</div>
         ${svg}
-        <div style="font-size:.75rem;color:var(--muted);margin-top:4px">
-          <span style="color:#f59e0b;font-weight:600">─ ─</span> 全部平均 ${overallAvgWan}萬
-          ${fySorted.map((fy,i)=>`<span style="color:${FY_COLORS[i%FY_COLORS.length]};font-weight:600">─ ─</span> V${i+1}=${fy-1911}年8月起`).join('　')}
+        <div style="font-size:.75rem;color:var(--muted);margin-top:6px;line-height:1.8">
+          <span style="color:#f59e0b;font-weight:600">─ ─</span> 平均 ${overallAvgWan}萬元<br>
+          ${fySorted.map((fy,i)=>{ const roc=fy-1911; const fyAvg=(fyMap[fy].sum/fyMap[fy].indices.length/10000).toFixed(1); return `V${i+1}: ${roc}-${roc+1}/8月 ${fyAvg}萬元`; }).join('<br>')}
         </div>
       </div>`;
       html+=`<table style="width:100%;border-collapse:collapse;margin-bottom:80px">
