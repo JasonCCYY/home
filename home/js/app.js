@@ -1585,7 +1585,7 @@ const APP = {
     this.calcOil();
   },
 
-  async saveOil(){
+  async saveOil(btn){
     const v=this._calcOilValues();
     const date=document.getElementById('oil-date').value.replace(/-/g,'/');
     if(!date||!v.daily){this.toast('請填入日期和當日油錢');return;}
@@ -1593,8 +1593,8 @@ const APP = {
       liters:v.liters,totalKm:document.getElementById('oil-totalKm').value,km:v.km||'',
       efficiency:v.eff>0?v.eff.toFixed(1):'',costPerKm:v.cpk>0?v.cpk.toFixed(1):'',
       discPerL:v.dpl>0?v.dpl.toFixed(2):'',plan:this._oilPlan};
+    if(btn){btn.disabled=true;btn.textContent='儲存中...';}
     try{
-      this.toast('儲存中…');
       if(this._editOilRow) await SHEETS.updateOil(this._editOilRow,d);
       else await SHEETS.addOil(d);
       this.closeModal('modal-add-oil');
@@ -1603,6 +1603,7 @@ const APP = {
       ['oilStat','yearStat'].forEach(k => { SHEETS.clearCache(k); this._loaded['car_'+k]=false; });
       this.loadOil();
     }catch(e){this.toast('❌ '+e.message);}
+    finally{if(btn){btn.disabled=false;btn.textContent='儲存';}}
   },
 
   showOilDetail(idx){
@@ -1665,13 +1666,13 @@ const APP = {
     document.getElementById('exp-item').value=item;
   },
 
-  async saveExpense(){
+  async saveExpense(btn){
     const date=document.getElementById('exp-date').value.replace(/-/g,'/');
     const item=document.getElementById('exp-item').value.trim();
     const amountRaw=document.getElementById('exp-amount').value.replace(/[^0-9]/g,'');
     if(!date||!item||!amountRaw){this.toast('請填入日期、項目和金額');return;}
+    if(btn){btn.disabled=true;btn.textContent='儲存中...';}
     try{
-      this.toast('儲存中…');
       const amount=amountRaw;
       const rawMileage=document.getElementById('exp-mileage').value.replace(/[^0-9]/g,'');
       const row={date,cat:this._expCat,item,amount,note:document.getElementById('exp-note').value,mileage:rawMileage};
@@ -1687,6 +1688,7 @@ const APP = {
       this._loaded['car_expense']=false;
       this.loadGasExpense();
     }catch(e){this.toast('❌ '+e.message);}
+    finally{if(btn){btn.disabled=false;btn.textContent='儲存';}}
   },
 
 
@@ -1806,14 +1808,14 @@ const APP = {
     document.querySelectorAll('.data-counted-chip').forEach(c=>c.classList.toggle('on',c.dataset.counted===val));
   },
 
-  async saveData(){
+  async saveData(btn){
     const date=document.getElementById('data-date').value.replace(/-/g,'/');
     const amountRaw=document.getElementById('data-amount').value.replace(/[^0-9]/g,'');
     const note=document.getElementById('data-note').value||this._dataNoteSelected;
     const io=this._dataIOSelected, item=this._dataItemSelected;
     if(!date||!amountRaw||!item){this.toast('請填入日期、金額和項目');return;}
+    if(btn){btn.disabled=true;btn.textContent='儲存中...';}
     try{
-      this.toast('儲存中…');
       const amount=amountRaw;
       const counted=this._dataCounted||'TRUE';
       if(this._editDataRow) await SHEETS.updateData(this._editDataRow,{date,amount,io,item,note,counted});
@@ -1822,8 +1824,9 @@ const APP = {
       this.toast('✅ 已儲存');
       if(this.subDetail==='curMonth') this.loadCurMonth();
       else if(this.subDetail==='prevMonth') this.loadPrevMonth();
-      this._refreshOverviewLater(); // 延遲 3 秒刷新統計
+      this._refreshOverviewLater();
     }catch(e){this.toast('❌ '+e.message);}
+    finally{if(btn){btn.disabled=false;btn.textContent='儲存';}}
   },
 
   showDataDetail(idx){
