@@ -459,6 +459,18 @@
         oninput="APP.doSearch(this.value)">
       <button onclick="APP.closeSearch()" style="border:none;background:none;color:#8fa3b8;font-size:1.1rem;cursor:pointer;padding:4px">✕</button>
     </div>
+    <div style="padding:10px 0 12px;border-bottom:1px solid #e8eef4">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+        <input id="search-date-from" type="date" class="f-input" style="flex:1;padding:8px 10px;font-size:.85rem" oninput="APP.doSearch(document.getElementById('search-input').value)">
+        <span style="color:#aab8c8;font-size:.9rem;flex-shrink:0">—</span>
+        <input id="search-date-to" type="date" class="f-input" style="flex:1;padding:8px 10px;font-size:.85rem" oninput="APP.doSearch(document.getElementById('search-input').value)">
+      </div>
+      <div class="chip-row" id="search-io-chips">
+        <button class="chip on" data-io="" onclick="APP._setSearchIo(this,'')">全部</button>
+        <button class="chip inc-chip" data-io="Inc." onclick="APP._setSearchIo(this,'Inc.')">收入</button>
+        <button class="chip exp-chip" data-io="Exp." onclick="APP._setSearchIo(this,'Exp.')">支出</button>
+      </div>
+    </div>
   </div>
   <div id="search-results" style="max-height:65dvh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom)"
     onclick="(function(e){const row=e.target.closest('[data-action]');if(!row)return;const idx=row.dataset.key;const action=row.dataset.action;APP._detailFromSearch=true;document.getElementById('modal-search').classList.remove('open');if(action==='dataDetail')APP.showDataDetail(idx);if(action==='oilDetail')APP.showOilDetail(idx);})(event)">

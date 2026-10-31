@@ -1400,34 +1400,64 @@ const APP = {
   openSearch(){
     document.getElementById('modal-search').classList.add('open');
     setTimeout(()=>document.getElementById('search-input').focus(),100);
-    document.getElementById('search-results').innerHTML='<div class="load-msg" style="color:#8fa3b8">輸入關鍵字搜尋</div>';
+    document.getElementById('search-results').innerHTML='<div class="load-msg" style="color:#8fa3b8">輸入關鍵字或選擇條件</div>';
     document.getElementById('search-input').value='';
+    document.getElementById('search-date-from').value='';
+    document.getElementById('search-date-to').value='';
+    this._searchIo='';
+    document.querySelectorAll('#search-io-chips .chip').forEach(c=>c.classList.toggle('on',c.dataset.io===''));
   },
   closeSearch(){
     document.getElementById('modal-search').classList.remove('open');
   },
+  _setSearchIo(btn,io){
+    this._searchIo=io;
+    document.querySelectorAll('#search-io-chips .chip').forEach(c=>c.classList.remove('on'));
+    btn.classList.add('on');
+    this.doSearch(document.getElementById('search-input').value);
+  },
   async doSearch(q){
     const el=document.getElementById('search-results');
     q=q.trim();
-    if(!q){el.innerHTML='<div class="load-msg" style="color:#8fa3b8">輸入關鍵字搜尋</div>';return;}
-    if(q.length<1) return;
+    const fromVal=document.getElementById('search-date-from').value;
+    const toVal=document.getElementById('search-date-to').value;
+    const ioFilter=this._searchIo||'';
+    if(!q&&!fromVal&&!toVal&&!ioFilter){
+      el.innerHTML='<div class="load-msg" style="color:#8fa3b8">輸入關鍵字或選擇條件</div>';return;
+    }
     el.innerHTML='<div class="load-msg">搜尋中...</div>';
+    const matchDate=dateStr=>{
+      if(!fromVal&&!toVal) return true;
+      const norm=this._toDateInput(dateStr);
+      if(!norm) return true;
+      if(fromVal&&norm<fromVal) return false;
+      if(toVal&&norm>toVal) return false;
+      return true;
+    };
     try{
       // Search across Data sheet (income/expense records)
       const all=await SHEETS.loadData();
       const kw=q.toLowerCase();
       const hits=all.filter(r=>{
-        return [r.date,r.amount,r.io,r.item,r.note].some(v=>String(v||'').toLowerCase().includes(kw));
+        if(ioFilter&&r.io!==ioFilter) return false;
+        if(!matchDate(r.date)) return false;
+        if(kw&&![r.date,r.amount,r.io,r.item,r.note].some(v=>String(v||'').toLowerCase().includes(kw))) return false;
+        return true;
       }).slice(0,50);
-      
-      // Also search oil records
-      const oils=await SHEETS.loadOilRecords();
-      const oilHits=oils.filter(r=>{
-        return [r.date,r.actual,r.plan,r.liters,r.km].some(v=>String(v||'').toLowerCase().includes(kw));
-      }).slice(0,20);
-      
+
+      // Also search oil records (only when not filtering by Inc./Exp.)
+      let oilHits=[];
+      if(!ioFilter){
+        const oils=await SHEETS.loadOilRecords();
+        oilHits=oils.filter(r=>{
+          if(!matchDate(r.date)) return false;
+          if(kw&&![r.date,r.actual,r.plan,r.liters,r.km].some(v=>String(v||'').toLowerCase().includes(kw))) return false;
+          return true;
+        }).slice(0,20);
+      }
+
       if(!hits.length&&!oilHits.length){
-        el.innerHTML='<div class="load-msg">找不到「'+q+'」</div>';
+        el.innerHTML='<div class="load-msg">找不到符合條件的記錄</div>';
         return;
       }
 
@@ -1436,7 +1466,12 @@ const APP = {
 
       let html='';
       if(hits.length){
-        html+=`<div class="section-hdr">收支記錄（${hits.length}筆）</div>`;
+        const total=hits.reduce((s,r)=>{
+          const v=parseFloat(String(r.amount).replace(/,/g,''))||0;
+          return s+(r.io==='Inc.'?v:-v);
+        },0);
+        const totalStr=(total>=0?'+':'')+this.fmt(Math.abs(total).toFixed(0))+(total>=0?' 收入':' 支出');
+        html+=`<div class="section-hdr">收支記錄（${hits.length}筆）<span style="font-weight:500;color:${total>=0?'#0ea572':'#dc2626'}">${totalStr}</span></div>`;
         hits.forEach(r=>{
           const isInc=r.io==='Inc.';
           const idx=this._storeRow(r);
