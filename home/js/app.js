@@ -1611,9 +1611,9 @@ const APP = {
     const el=document.getElementById(id);
     if(!el) return;
     el.classList.add('open');
-    // Bind swipe-down to close
+    // Bind swipe-down to close (skip for oil modal)
     const sheet=el.querySelector('.modal-sheet');
-    if(sheet && !sheet._swipeBound){
+    if(sheet && !sheet._swipeBound && id!=='modal-add-oil'){
       sheet._swipeBound=true;
       let sy=0, dragging=false, canClose=false;
       sheet.addEventListener('touchstart',e=>{
