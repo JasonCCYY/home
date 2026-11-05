@@ -119,14 +119,17 @@ const APP = {
   _getNavMonthYM(offset){
     const n=new Date();
     const d=new Date(n.getFullYear(),n.getMonth()+offset,1);
-    return `${d.getFullYear()}/${d.getMonth()+1}`;
+    return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}`;
   },
   _navMonthLabel(offset){
     const ym=this._getNavMonthYM(offset);
-    if(offset===0) return ym+' (當月)';
-    if(offset===-1) return ym+' (上月)';
-    if(offset===-2) return ym+' (上兩個月)';
-    return ym;
+    // Display without leading zero for month
+    const [y,m]=ym.split('/');
+    const disp=`${y}/${+m}`;
+    if(offset===0) return disp+' (當月)';
+    if(offset===-1) return disp+' (上月)';
+    if(offset===-2) return disp+' (上兩個月)';
+    return disp;
   },
   _navMonthDefaultDate(offset){
     if(offset===0) return this.todayISO();
@@ -139,9 +142,66 @@ const APP = {
     if(lbl) lbl.textContent=this._navMonthLabel(this._detailMonthOffset);
     const next=document.getElementById('month-nav-next');
     if(next) next.style.color=this._detailMonthOffset>=0?'#c8d8e8':'#1a7fd4';
+    const today=document.getElementById('month-nav-today');
+    if(today) today.style.display=this._detailMonthOffset!==0?'inline-block':'none';
   },
   navMonthOffset(delta){
     this._detailMonthOffset+=delta;
+    document.getElementById('month-picker').style.display='none';
+    this._updateNavHeader();
+    this._loaded['det_monthNav']=false;
+    this.loadMonthNav();
+  },
+  _pickerGoToday(){
+    this._detailMonthOffset=0;
+    document.getElementById('month-picker').style.display='none';
+    this._updateNavHeader();
+    this._loaded['det_monthNav']=false;
+    this.loadMonthNav();
+  },
+  _toggleMonthPicker(){
+    const p=document.getElementById('month-picker');
+    if(!p) return;
+    if(p.style.display==='none'){
+      const ym=this._getNavMonthYM(this._detailMonthOffset);
+      this._pickerYear=parseInt(ym.split('/')[0]);
+      this._renderPickerMonths();
+      p.style.display='block';
+    } else {
+      p.style.display='none';
+    }
+  },
+  _pickerNavYear(d){
+    this._pickerYear=(this._pickerYear||new Date().getFullYear())+d;
+    this._renderPickerMonths();
+  },
+  _renderPickerMonths(){
+    const grid=document.getElementById('picker-month-grid');
+    const yrEl=document.getElementById('picker-year-label');
+    if(!grid||!yrEl) return;
+    yrEl.textContent=this._pickerYear+'年';
+    const now=new Date(), nowY=now.getFullYear(), nowM=now.getMonth()+1;
+    const dispYM=this._getNavMonthYM(this._detailMonthOffset);
+    const [dispY,dispM]=dispYM.split('/').map(Number);
+    const yr=this._pickerYear;
+    grid.innerHTML='';
+    for(let m=1;m<=12;m++){
+      const isNow=(yr===nowY&&m===nowM);
+      const isSel=(yr===dispY&&m===dispM);
+      const btn=document.createElement('button');
+      btn.textContent=m+'月';
+      btn.style.cssText=`border-radius:8px;padding:9px 2px;font-size:.9rem;font-family:inherit;cursor:pointer;font-weight:${isSel?'700':'500'};
+        background:${isSel?'#1a7fd4':isNow?'#e8f0fb':'#f4f7fc'};
+        color:${isSel?'#fff':isNow?'#1a7fd4':'#2a3a50'};
+        border:${isNow&&!isSel?'1.5px solid #1a7fd4':'1.5px solid transparent'};`;
+      btn.onclick=()=>this._selectPickerMonth(yr,m);
+      grid.appendChild(btn);
+    }
+  },
+  _selectPickerMonth(y,m){
+    const now=new Date();
+    this._detailMonthOffset=(y-now.getFullYear())*12+(m-(now.getMonth()+1));
+    document.getElementById('month-picker').style.display='none';
     this._updateNavHeader();
     this._loaded['det_monthNav']=false;
     this.loadMonthNav();
@@ -652,6 +712,8 @@ const APP = {
   // ════════════════════════════════════════
 
   _loadDetailSub(sub){
+    const p=document.getElementById('month-picker');
+    if(p) p.style.display='none';
     if(sub==='monthNav'){ this._updateNavHeader(); this.loadMonthNav(); }
     else if(sub==='homeExp') this.loadHomeExp();
     else if(sub==='familyExp') this.loadFamilyExp();
