@@ -2,15 +2,16 @@
 const APP = {
   tab: 'detail',
   subCar: 'oil',
-  subDetail: 'curMonth',
+  subDetail: 'monthNav',
   subAna: 'expAna',
   subOv: 'estInc',
+  _detailMonthOffset: 0,
   CAR_SUBS:    ['oil','oilStat','expense','yearStat'],
-  DETAIL_SUBS: ['curMonth','prevMonth','homeExp','familyExp'],
+  DETAIL_SUBS: ['monthNav','homeExp','familyExp'],
   ANA_SUBS:    ['expAna','stockAna','water','elec'],
   OV_SUBS:     ['estInc','monthExp','balance','annualSum','lineChart'],
   CAR_PAGES:    { oil:'sp-oil', oilStat:'sp-oilStat', expense:'sp-expense', yearStat:'sp-yearStat' },
-  DETAIL_PAGES: { curMonth:'sp-curMonth', prevMonth:'sp-prevMonth', homeExp:'sp-homeExp', familyExp:'sp-familyExp' },
+  DETAIL_PAGES: { monthNav:'sp-monthNav', homeExp:'sp-homeExp', familyExp:'sp-familyExp' },
   ANA_PAGES:    { expAna:'sp-expAna', stockAna:'sp-stockAna', water:'sp-water', elec:'sp-elec' },
   OV_PAGES:     { estInc:'sp-estInc', monthExp:'sp-monthExp', balance:'sp-balance', annualSum:'sp-annualSum', lineChart:'sp-lineChart' },
 
@@ -68,7 +69,8 @@ const APP = {
     document.getElementById('auth-screen').style.display='none';
     document.getElementById('app').style.display='flex';
     SHEETS._migrate(); // clear caches with outdated ranges
-    this._setMonthLabels();
+    this._detailMonthOffset=0;
+    this._updateNavHeader();
     this.switchTab('detail',false);
     // preload other tabs silently in background
     setTimeout(()=>{if(!this._loaded['car_oil'])this._loadCarSub('oil');},1500);
@@ -85,7 +87,7 @@ const APP = {
     } else if (this.tab === 'detail') {
       SHEETS.clearCache('data');
       SHEETS.clearCache('options');
-      ['curMonth','prevMonth','homeExp','familyExp'].forEach(s => this._loaded['det_' + s] = false);
+      ['monthNav','homeExp','familyExp'].forEach(s => this._loaded['det_' + s] = false);
       this._loadDetailSub(this.subDetail);
     } else if (this.tab === 'ana') {
       SHEETS.clearCache('data');
@@ -114,15 +116,35 @@ const APP = {
     }, 3000);
   },
 
-  _setMonthLabels(){
+  _getNavMonthYM(offset){
     const n=new Date();
-    const cur=`${n.getFullYear()}年${n.getMonth()+1}月`;
-    const p=new Date(n.getFullYear(),n.getMonth()-1,1);
-    const prev=`${p.getFullYear()}年${p.getMonth()+1}月`;
-    const lc=document.getElementById('label-curMonth');
-    const lp=document.getElementById('label-prevMonth');
-    if(lc) lc.textContent=cur;
-    if(lp) lp.textContent=prev;
+    const d=new Date(n.getFullYear(),n.getMonth()+offset,1);
+    return `${d.getFullYear()}/${d.getMonth()+1}`;
+  },
+  _navMonthLabel(offset){
+    const ym=this._getNavMonthYM(offset);
+    if(offset===0) return ym+' (當月)';
+    if(offset===-1) return ym+' (上月)';
+    if(offset===-2) return ym+' (上兩個月)';
+    return ym;
+  },
+  _navMonthDefaultDate(offset){
+    if(offset===0) return this.todayISO();
+    const n=new Date();
+    const last=new Date(n.getFullYear(),n.getMonth()+offset+1,0);
+    return `${last.getFullYear()}-${String(last.getMonth()+1).padStart(2,'0')}-${String(last.getDate()).padStart(2,'0')}`;
+  },
+  _updateNavHeader(){
+    const lbl=document.getElementById('month-nav-label');
+    if(lbl) lbl.textContent=this._navMonthLabel(this._detailMonthOffset);
+    const next=document.getElementById('month-nav-next');
+    if(next) next.style.color=this._detailMonthOffset>=0?'#c8d8e8':'#1a7fd4';
+  },
+  navMonthOffset(delta){
+    this._detailMonthOffset+=delta;
+    this._updateNavHeader();
+    this._loaded['det_monthNav']=false;
+    this.loadMonthNav();
   },
 
   prevMonthLastDay(){
@@ -218,7 +240,7 @@ const APP = {
     // Reset to default sub-page each time tab is clicked
     if(forceDefault){
       if(tab==='car')      this.subCar='oil';
-      if(tab==='detail')   this.subDetail='curMonth';
+      if(tab==='detail')   { this.subDetail='monthNav'; this._detailMonthOffset=0; this._updateNavHeader(); }
       if(tab==='ana')      this.subAna='expAna';
       if(tab==='overview') this.subOv='estInc';
     }
@@ -246,7 +268,7 @@ const APP = {
   _updateFab(){
     const fab=document.getElementById('fab');
     const show=(this.tab==='car'&&(this.subCar==='oil'||this.subCar==='expense'))||
-               (this.tab==='detail'&&(this.subDetail==='curMonth'||this.subDetail==='prevMonth'));
+               (this.tab==='detail'&&this.subDetail==='monthNav');
     fab.style.display=show?'flex':'none';
   },
 
@@ -630,8 +652,9 @@ const APP = {
   // ════════════════════════════════════════
 
   _loadDetailSub(sub){
-    const fn={curMonth:()=>this.loadCurMonth(),prevMonth:()=>this.loadPrevMonth(),homeExp:()=>this.loadHomeExp(),familyExp:()=>this.loadFamilyExp()};
-    fn[sub]?.();
+    if(sub==='monthNav'){ this._updateNavHeader(); this.loadMonthNav(); }
+    else if(sub==='homeExp') this.loadHomeExp();
+    else if(sub==='familyExp') this.loadFamilyExp();
     this._loaded['det_'+sub]=true;
   },
 
@@ -648,25 +671,15 @@ const APP = {
     this._loaded['ana_'+sub]=true;
   },
 
-  async loadCurMonth(){
-    const el=document.getElementById('cur-month-list');
+  async loadMonthNav(){
+    const el=document.getElementById('month-nav-list');
     if(!el) return;
     el.innerHTML=this.loading();
     try{
       const all=await SHEETS.loadData();
-      this._storeNS='d_'; this._clearStore();
-      el.innerHTML=this._renderMonthDetail(all.filter(r=>this.getMonth(r.date)===this.nowMonth()));
-    }catch(e){el.innerHTML=this.err(e);}
-  },
-
-  async loadPrevMonth(){
-    const el=document.getElementById('prev-month-list');
-    if(!el) return;
-    el.innerHTML=this.loading();
-    try{
-      const all=await SHEETS.loadData();
-      this._storeNS='p_'; this._clearStore();
-      el.innerHTML=this._renderMonthDetail(all.filter(r=>this.getMonth(r.date)===this.prevMonth()));
+      this._storeNS='mn_'; this._clearStore();
+      const ym=this._getNavMonthYM(this._detailMonthOffset);
+      el.innerHTML=this._renderMonthDetail(all.filter(r=>this.getMonth(r.date)===ym));
     }catch(e){el.innerHTML=this.err(e);}
   },
 
@@ -1516,9 +1529,8 @@ const APP = {
     if(this.tab==='car'){
       if(this.subCar==='oil') this._openOilModal();
       else if(this.subCar==='expense') this._openExpenseModal();
-    }else if(this.tab==='detail'){
-      if(this.subDetail==='curMonth') this._openDataModal(null,false);
-      else if(this.subDetail==='prevMonth') this._openDataModal(null,true);
+    }else if(this.tab==='detail'&&this.subDetail==='monthNav'){
+      this._openDataModal(null, this._navMonthDefaultDate(this._detailMonthOffset));
     }
   },
 
@@ -1750,7 +1762,7 @@ const APP = {
     }catch(e){this.toast('❌ '+e.message);}
   },
 
-  async _openDataModal(r=null,isPrev=false){
+  async _openDataModal(r=null,defaultDate=null){
     this._editDataRow=r?r._row:null;
     document.getElementById('modal-data-title').textContent=r?'修改收支記錄':'新增收支記錄';
     if(r){
@@ -1759,7 +1771,7 @@ const APP = {
       document.getElementById('data-note').value=r.note||'';
       this._dataIOSelected=r.io; this._dataItemSelected=r.item; this._dataNoteSelected=r.note||'';
     }else{
-      document.getElementById('data-date').value=isPrev?this.prevMonthLastDay():this.todayISO();
+      document.getElementById('data-date').value=defaultDate||this.todayISO();
       document.getElementById('data-amount').value=''; document.getElementById('data-note').value='';
       this._dataIOSelected='Inc.'; this._dataItemSelected=''; this._dataNoteSelected=''; this._dataCounted='TRUE';
     }
@@ -1857,8 +1869,7 @@ const APP = {
       else await SHEETS.addData({date,amount,io,item,note,counted});
       this.closeModal('modal-add-data');
       this.toast('✅ 已儲存');
-      if(this.subDetail==='curMonth') this.loadCurMonth();
-      else if(this.subDetail==='prevMonth') this.loadPrevMonth();
+      if(this.subDetail==='monthNav') this.loadMonthNav();
       this._refreshOverviewLater();
     }catch(e){this.toast('❌ '+e.message);}
     finally{if(btn){btn.disabled=false;btn.textContent='儲存';}}
@@ -1877,7 +1888,7 @@ const APP = {
       ['備註',r.note||'-'],
       ['計入總額',r.counted==='TRUE'?'是':'否'],
     ].map(([k,v])=>`<div class="detail-field"><span class="detail-key">${k}</span><span class="detail-val">${v}</span></div>`).join('');
-    document.getElementById('data-detail-edit-btn').onclick=()=>{this._detailFromSearch=false;this.closeModal('modal-data-detail');this._openDataModal(r,false);};
+    document.getElementById('data-detail-edit-btn').onclick=()=>{this._detailFromSearch=false;this.closeModal('modal-data-detail');this._openDataModal(r);};
     document.getElementById('data-detail-del-btn').onclick=()=>{this._detailFromSearch=false;this._deleteData(r);};
     this.openModal('modal-data-detail');
   },
@@ -1888,8 +1899,7 @@ const APP = {
       await SHEETS.deleteDataRow(r._row);
       this.closeModal('modal-data-detail');
       this.toast('🗑️ 已刪除');
-      if(this.subDetail==='curMonth') this.loadCurMonth();
-      else this.loadPrevMonth();
+      if(this.subDetail==='monthNav') this.loadMonthNav();
       this._refreshOverviewLater(); // 延遲 3 秒刷新統計
     }catch(e){this.toast('❌ '+e.message);}
   },

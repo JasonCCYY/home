@@ -87,8 +87,7 @@
     <button class="sub-tab" data-sub="yearStat">年度</button>
   </div>
   <div class="sub-tabs sub-tabs-even" id="sub-detail" style="display:flex">
-    <button class="sub-tab active" data-sub="curMonth">當月</button>
-    <button class="sub-tab" data-sub="prevMonth">上月</button>
+    <button class="sub-tab active" data-sub="monthNav">細項</button>
     <button class="sub-tab" data-sub="homeExp">🏠</button>
     <button class="sub-tab" data-sub="familyExp">小家庭</button>
   </div>
@@ -154,14 +153,13 @@
       <!-- ════ PAGE 1: 細項 ════ -->
       <div id="pg-detail" class="page">
 
-        <div class="sub-page active" id="sp-curMonth">
-          <div class="month-label" id="label-curMonth"></div>
-          <div class="scroll-content" id="cur-month-list"><div class="load-msg">載入中...</div></div>
-        </div>
-
-        <div class="sub-page" id="sp-prevMonth">
-          <div class="month-label" id="label-prevMonth"></div>
-          <div class="scroll-content" id="prev-month-list"><div class="load-msg">載入中...</div></div>
+        <div class="sub-page active" id="sp-monthNav">
+          <div id="month-nav-hdr" style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#f8fafc;border-bottom:1px solid #e8eef4;position:sticky;top:0;z-index:2">
+            <button onclick="APP.navMonthOffset(-1)" style="border:none;background:none;font-size:1.6rem;color:#1a7fd4;cursor:pointer;padding:0 6px;line-height:1">‹</button>
+            <span id="month-nav-label" style="font-weight:700;font-size:1.05rem;color:#1a2332;letter-spacing:.02em"></span>
+            <button id="month-nav-next" onclick="APP.navMonthOffset(1)" style="border:none;background:none;font-size:1.6rem;color:#1a7fd4;cursor:pointer;padding:0 6px;line-height:1">›</button>
+          </div>
+          <div class="scroll-content" id="month-nav-list"><div class="load-msg">載入中...</div></div>
         </div>
 
         <div class="sub-page" id="sp-homeExp">
