@@ -159,16 +159,29 @@ const APP = {
     this._loaded['det_monthNav']=false;
     this.loadMonthNav();
   },
-  _toggleMonthPicker(){
-    const p=document.getElementById('month-picker');
-    if(!p) return;
-    if(p.style.display==='none'){
-      const ym=this._getNavMonthYM(this._detailMonthOffset);
-      this._pickerYear=parseInt(ym.split('/')[0]);
-      this._renderPickerMonths();
-      p.style.display='block';
+  _onNavLabelTap(){
+    const now=Date.now();
+    const isDouble=(now-(this._lastLabelTap||0))<350;
+    this._lastLabelTap=now;
+    clearTimeout(this._labelTapTimer);
+    if(isDouble){
+      this._lastLabelTap=0;
+      // Double tap → open/close picker
+      const p=document.getElementById('month-picker');
+      if(!p) return;
+      if(p.style.display==='none'){
+        const ym=this._getNavMonthYM(this._detailMonthOffset);
+        this._pickerYear=parseInt(ym.split('/')[0]);
+        this._renderPickerMonths();
+        p.style.display='block';
+      } else {
+        p.style.display='none';
+      }
     } else {
-      p.style.display='none';
+      // Single tap — wait to confirm not double tap
+      this._labelTapTimer=setTimeout(()=>{
+        if(this._detailMonthOffset!==0) this._pickerGoToday();
+      },350);
     }
   },
   _pickerNavYear(d){
