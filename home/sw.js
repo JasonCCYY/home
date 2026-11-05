@@ -1,4 +1,4 @@
-const VER = 'home-v7';
+const VER = 'home-v8';
 const CACHE = [
   '/',
   '/home/index.html',

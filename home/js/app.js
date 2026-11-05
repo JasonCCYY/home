@@ -142,8 +142,6 @@ const APP = {
     if(lbl) lbl.textContent=this._navMonthLabel(this._detailMonthOffset);
     const next=document.getElementById('month-nav-next');
     if(next) next.style.color=this._detailMonthOffset>=0?'#c8d8e8':'#1a7fd4';
-    const today=document.getElementById('month-nav-today');
-    if(today) today.style.display=this._detailMonthOffset!==0?'inline-block':'none';
   },
   navMonthOffset(delta){
     this._detailMonthOffset+=delta;
