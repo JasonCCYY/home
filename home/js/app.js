@@ -643,30 +643,45 @@ const APP = {
     if(!el) return;
     el.innerHTML=this.loading();
     try{
-      const recs=await SHEETS.loadGasExpense();
+      const allRecs=await SHEETS.loadGasExpense();
       this._storeNS='e_'; this._clearStore();
+      if(!allRecs.length){el.innerHTML=this.empty();return;}
+
+      // ── Year filter bar ──
+      const years=[...new Set(allRecs.map(r=>String(r.date).split('/')[0]))].sort((a,b)=>b-a);
+      const bar=document.getElementById('exp-year-bar');
+      if(bar){
+        bar.style.display='block';
+        // If stored year no longer in data, reset to null
+        if(this._expYear&&!years.includes(this._expYear)) this._expYear=null;
+        bar.innerHTML=['全部',...years].map(y=>{
+          const sel=(this._expYear===null&&y==='全部')||(this._expYear===y);
+          return `<button onclick="APP.selectExpYear('${y}')" style="display:inline-block;margin-right:6px;padding:5px 14px;border-radius:14px;border:1.5px solid ${sel?'#1a7fd4':'#d8e4f0'};background:${sel?'#1a7fd4':'#f8fafc'};color:${sel?'#fff':'#4a6080'};font-size:.88rem;font-weight:${sel?'700':'500'};cursor:pointer;font-family:inherit;white-space:nowrap">${y==='全部'?'全部':y+'年'}</button>`;
+        }).join('');
+      }
+
+      const recs=this._expYear?allRecs.filter(r=>String(r.date).startsWith(this._expYear)):allRecs;
       if(!recs.length){el.innerHTML=this.empty();return;}
+
       const catOrder=['保養','保險','稅費'];
       const maintainOrder=['定保','更換蓄電池','更換輪胎'];
       const getMaintainRank=item=>{
         for(let i=0;i<maintainOrder.length;i++) if(item.includes(maintainOrder[i])) return i;
         return maintainOrder.length;
       };
-      // Normalize date string for correct string comparison: 2024/6/1 -> 2024/06/01
       const normDate=d=>{
         const p=String(d).split('/');
-        if(p.length===3) return `${p[0]}/${p[1].padStart(2,'0')}/${p[2].padStart(2,'0')}`;
-        return d;
+        return p.length===3?`${p[0]}/${p[1].padStart(2,'0')}/${p[2].padStart(2,'0')}`:d;
       };
+      // Sort: category order, then item-type rank (保養 only), then date DESC (newest first)
       const sorted=[...recs].sort((a,b)=>{
         const ca=catOrder.indexOf(a.cat),cb=catOrder.indexOf(b.cat);
         if(ca!==cb) return ca-cb;
         if(a.cat==='保養'){
           const ra=getMaintainRank(a.item),rb=getMaintainRank(b.item);
           if(ra!==rb) return ra-rb;
-          return normDate(a.date).localeCompare(normDate(b.date));
         }
-        return normDate(a.date).localeCompare(normDate(b.date));
+        return normDate(b.date).localeCompare(normDate(a.date)); // DESC
       });
       const cats={};
       sorted.forEach(r=>(cats[r.cat]=cats[r.cat]||[]).push(r));
@@ -687,6 +702,12 @@ const APP = {
       });
       el.innerHTML=html;
     }catch(e){el.innerHTML=this.err(e);}
+  },
+
+  selectExpYear(y){
+    this._expYear=(y==='全部')?null:y;
+    this._loaded['car_expense']=false;
+    this.loadGasExpense();
   },
 
   async loadYearStat(){
