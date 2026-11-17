@@ -1654,13 +1654,25 @@ const APP = {
     }
   },
 
-  _openOilModal(r=null){
+  async _openOilModal(r=null){
     this._editOilRow=r?r._row:null;
     document.getElementById('modal-oil-title').textContent=r?'修改加油記錄':'新增加油記錄';
     document.getElementById('oil-date').value=r?this._toDateInput(r.date):this.todayISO();
     document.getElementById('oil-daily').value=r?r.daily:'';
     document.getElementById('oil-liters').value=r?r.liters:'';
-    document.getElementById('oil-totalKm').value=r?String(r.totalKm).replace(/,/g,''):'';
+    if(r){
+      document.getElementById('oil-totalKm').value=String(r.totalKm).replace(/,/g,'');
+    } else {
+      // Ensure _maxOilKm is loaded (may be 0 if oil list hasn't been viewed yet)
+      if(!this._maxOilKm){
+        try{
+          const recs=await SHEETS.loadOilRecords();
+          const allKm=recs.map(rc=>this.num(String(rc.totalKm).replace(/,/g,''))).filter(v=>v>0);
+          this._maxOilKm=allKm.length?Math.max(...allKm):0;
+        }catch(e){}
+      }
+      document.getElementById('oil-totalKm').value=this._maxOilKm||'';
+    }
     const planVal=r?r.plan:'中油自助玉山4.5%';
     this._oilPlan=planVal;
     document.querySelectorAll('#oil-plan-chips .chip').forEach(c=>{
