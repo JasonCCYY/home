@@ -1550,7 +1550,7 @@ const APP = {
         if(!matchDate(r.date)) return false;
         if(kw&&![r.date,r.amount,r.io,r.item,r.note].some(v=>String(v||'').toLowerCase().includes(kw))) return false;
         return true;
-      }).slice(0,50);
+      }).sort((a,b)=>this._toDateInput(b.date).localeCompare(this._toDateInput(a.date))).slice(0,50);
 
       // Also search oil records (only when not filtering by Inc./Exp.)
       let oilHits=[];
@@ -1560,7 +1560,7 @@ const APP = {
           if(!matchDate(r.date)) return false;
           if(kw&&![r.date,r.actual,r.plan,r.liters,r.km].some(v=>String(v||'').toLowerCase().includes(kw))) return false;
           return true;
-        }).slice(0,20);
+        }).sort((a,b)=>this._toDateInput(b.date).localeCompare(this._toDateInput(a.date))).slice(0,20);
       }
 
       if(!hits.length&&!oilHits.length){
@@ -1811,6 +1811,10 @@ const APP = {
       chipWrap.innerHTML=`<button class="chip" onclick="APP._selectExpItem(this,'牌照稅')">牌照稅</button><button class="chip" onclick="APP._selectExpItem(this,'燃料費')">燃料費</button>`;
       chipWrap.style.display='flex';
       document.getElementById('exp-item').value='';
+    }else if(cat==='保養'){
+      chipWrap.innerHTML=`<button class="chip" onclick="APP._selectExpItem(this,'定保')">定保</button><button class="chip" onclick="APP._selectExpItem(this,'更換輪胎')">更換輪胎</button><button class="chip" onclick="APP._selectExpItem(this,'更換蓄電池')">更換蓄電池</button>`;
+      chipWrap.style.display='flex';
+      document.getElementById('exp-item').value='';
     }else{chipWrap.innerHTML='';chipWrap.style.display='none';}
   },
 
@@ -1976,6 +1980,8 @@ const APP = {
       this.closeModal('modal-add-data');
       this.toast('✅ 已儲存');
       if(this.subDetail==='monthNav') this.loadMonthNav();
+      this._loaded['det_homeExp']=false;
+      this._loaded['det_familyExp']=false;
       this._refreshOverviewLater();
     }catch(e){this.toast('❌ '+e.message);}
     finally{if(btn){btn.disabled=false;btn.textContent='儲存';}}
