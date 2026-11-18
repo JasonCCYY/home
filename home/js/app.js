@@ -1913,7 +1913,8 @@ const APP = {
     document.getElementById('modal-data-title').textContent=r?'修改收支記錄':'新增收支記錄';
     if(r){
       document.getElementById('data-date').value=this._toDateInput(r.date);
-      document.getElementById('data-amount').value=String(r.amount).replace(/,/g,'');
+      const _rawAmt=String(r.amount).replace(/[^0-9]/g,'');
+      document.getElementById('data-amount').value=_rawAmt?Number(_rawAmt).toLocaleString():'';
       document.getElementById('data-note').value=r.note||'';
       this._dataIOSelected=r.io; this._dataItemSelected=r.item; this._dataNoteSelected=r.note||'';
     }else{
@@ -1999,6 +2000,14 @@ const APP = {
   selectDataCounted(val){
     this._dataCounted=val;
     document.querySelectorAll('.data-counted-chip').forEach(c=>c.classList.toggle('on',c.dataset.counted===val));
+  },
+
+  _onAmountFocus(input){
+    input.value=input.value.replace(/,/g,'');
+  },
+  _onAmountBlur(input){
+    const raw=input.value.replace(/[^0-9]/g,'');
+    input.value=raw?Number(raw).toLocaleString():'';
   },
 
   async saveData(btn){
