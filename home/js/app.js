@@ -1715,10 +1715,11 @@ const APP = {
     this._editOilRow=r?r._row:null;
     document.getElementById('modal-oil-title').textContent=r?'修改加油記錄':'新增加油記錄';
     document.getElementById('oil-date').value=r?this._toDateInput(r.date):this.todayISO();
-    document.getElementById('oil-daily').value=r?r.daily:'';
+    const _fmtN=n=>{const v=this.num(n);return v?v.toLocaleString():'';};
+    document.getElementById('oil-daily').value=r?_fmtN(r.daily):'';
     document.getElementById('oil-liters').value=r?r.liters:'';
     if(r){
-      document.getElementById('oil-totalKm').value=String(r.totalKm).replace(/,/g,'');
+      document.getElementById('oil-totalKm').value=_fmtN(r.totalKm);
     } else {
       // Ensure _maxOilKm is loaded (may be 0 if oil list hasn't been viewed yet)
       if(!this._maxOilKm){
@@ -1728,7 +1729,7 @@ const APP = {
           this._maxOilKm=allKm.length?Math.max(...allKm):0;
         }catch(e){}
       }
-      document.getElementById('oil-totalKm').value=this._maxOilKm||'';
+      document.getElementById('oil-totalKm').value=this._maxOilKm?this._maxOilKm.toLocaleString():'';
     }
     const planVal=r?r.plan:'中油自助玉山4.5%';
     this._oilPlan=planVal;
@@ -1779,7 +1780,7 @@ const APP = {
     const date=document.getElementById('oil-date').value.replace(/-/g,'/');
     if(!date||!v.daily){this.toast('請填入日期和當日油錢');return;}
     const d={date,actual:v.actual,daily:v.daily,selfDisc:v.selfDisc,cardDisc:v.cardDisc,totalDisc:v.totalDisc,
-      liters:v.liters,totalKm:document.getElementById('oil-totalKm').value,km:v.km||'',
+      liters:v.liters,totalKm:document.getElementById('oil-totalKm').value.replace(/,/g,''),km:v.km||'',
       efficiency:v.eff>0?v.eff.toFixed(1):'',costPerKm:v.cpk>0?v.cpk.toFixed(1):'',
       discPerL:v.dpl>0?v.dpl.toFixed(2):'',plan:this._oilPlan};
     if(btn){btn.disabled=true;btn.textContent='儲存中...';}
@@ -1825,7 +1826,8 @@ const APP = {
     this._editExpRow=r?r._row:null;
     document.getElementById('modal-add-expense').querySelector('.modal-title').textContent=r?'修改開支記錄':'新增開支記錄';
     document.getElementById('exp-date').value=r?this._toDateInput(r.date):this.todayISO();
-    document.getElementById('exp-amount').value=r?String(r.amount).replace(/[^0-9.]/g,''):'';
+    const _rawExpAmt=String(r?.amount||'').replace(/[^0-9]/g,'');
+    document.getElementById('exp-amount').value=_rawExpAmt?Number(_rawExpAmt).toLocaleString():'';
     document.getElementById('exp-note').value=r?r.note||'':'';
     document.getElementById('exp-mileage').value=r?String(r.mileage||'').replace(/[^0-9]/g,''):'';
     document.querySelectorAll('#exp-cat-chips .chip').forEach(c=>c.classList.toggle('on',c.textContent.trim()===cat));

@@ -292,7 +292,7 @@
   </div>
   <div class="fg">
     <label class="fg-label">當日油錢 <span class="fg-hint">(牌價×公升)</span></label>
-    <input class="f-input" type="number" id="oil-daily" placeholder="0" inputmode="numeric" oninput="APP.calcOil()">
+    <input class="f-input" type="text" id="oil-daily" placeholder="0" inputmode="numeric" oninput="APP._onAmountInput(this);APP.calcOil()" onblur="APP._onAmountBlur(this)">
   </div>
   <div class="fg">
     <label class="fg-label">公升數</label>
@@ -300,7 +300,7 @@
   </div>
   <div class="fg">
     <label class="fg-label">總里程數 (km)</label>
-    <input class="f-input" type="number" id="oil-totalKm" placeholder="輸入目前里程表數字" inputmode="numeric" oninput="APP.calcOil()">
+    <input class="f-input" type="text" id="oil-totalKm" placeholder="輸入目前里程表數字" inputmode="numeric" oninput="APP._onAmountInput(this);APP.calcOil()" onblur="APP._onAmountBlur(this)">
   </div>
   <div class="fg">
     <label class="fg-label">方案</label>
@@ -367,7 +367,7 @@
   </div>
   <div class="fg">
     <label class="fg-label">金額</label>
-    <input class="f-input" type="number" id="exp-amount" placeholder="0" inputmode="numeric">
+    <input class="f-input" type="text" id="exp-amount" placeholder="0" inputmode="numeric" oninput="APP._onAmountInput(this)" onblur="APP._onAmountBlur(this)">
   </div>
   <div class="fg">
     <label class="fg-label">備註 <span class="fg-hint">（選填）</span></label>
