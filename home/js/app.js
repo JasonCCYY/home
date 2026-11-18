@@ -29,6 +29,8 @@ const APP = {
   _dataNoteSelected: '',
   _dataCounted: 'TRUE',
   _expCat: '保養',
+  _incYear: null,
+  _ovExpYear: null,
 
   PLANS: {
     '中油自助玉山4.5%': { card: d=>d*0.045, self: l=>l*0.8 },
@@ -710,6 +712,18 @@ const APP = {
     this.loadGasExpense();
   },
 
+  selectIncYear(y){
+    this._incYear=(y==='全部')?null:y;
+    this._loaded['ov_estInc']=false;
+    this.loadEstInc();
+  },
+
+  selectOvExpYear(y){
+    this._ovExpYear=(y==='全部')?null:y;
+    this._loaded['ov_monthExp']=false;
+    this.loadMonthExp();
+  },
+
   async loadYearStat(){
     const el=document.getElementById('year-stat-content');
     if(!el) return;
@@ -979,7 +993,18 @@ const APP = {
           (incYearMap[yr]=incYearMap[yr]||[]).push(r);
         });
         const incYears=Object.keys(incYearMap).sort((a,b)=>b.localeCompare(a));
-        incYears.forEach(yr=>{
+        // Year filter bar
+        const incBar=document.getElementById('inc-year-bar');
+        if(incBar&&incYears.length){
+          if(this._incYear&&!incYears.includes(this._incYear)) this._incYear=null;
+          incBar.style.display='block';
+          incBar.innerHTML=['全部',...incYears].map(y=>{
+            const sel=(this._incYear===null&&y==='全部')||(this._incYear===y);
+            return `<button onclick="APP.selectIncYear('${y}')" style="display:inline-block;margin-right:6px;padding:5px 14px;border-radius:14px;border:1.5px solid ${sel?'#1a7fd4':'#d8e4f0'};background:${sel?'#1a7fd4':'#f8fafc'};color:${sel?'#fff':'#4a6080'};font-size:.88rem;font-weight:${sel?'700':'500'};cursor:pointer;font-family:inherit;white-space:nowrap">${y==='全部'?'全部':y+'年'}</button>`;
+          }).join('');
+        }
+        const filteredIncYears=this._incYear?incYears.filter(y=>y===this._incYear):incYears;
+        filteredIncYears.forEach(yr=>{
           const yrRows=incYearMap[yr];
           html+=`<tr class="yr-group-hdr">
             <td><strong>${yr}</strong></td>
@@ -1022,6 +1047,17 @@ const APP = {
         (yearMap[yr]=yearMap[yr]||[]).push(r);
       });
       const yearKeys=Object.keys(yearMap).sort((a,b)=>b.localeCompare(a));
+      // Year filter bar
+      const ovBar=document.getElementById('ovexp-year-bar');
+      if(ovBar&&yearKeys.length){
+        if(this._ovExpYear&&!yearKeys.includes(this._ovExpYear)) this._ovExpYear=null;
+        ovBar.style.display='block';
+        ovBar.innerHTML=['全部',...yearKeys].map(y=>{
+          const sel=(this._ovExpYear===null&&y==='全部')||(this._ovExpYear===y);
+          return `<button onclick="APP.selectOvExpYear('${y}')" style="display:inline-block;margin-right:6px;padding:5px 14px;border-radius:14px;border:1.5px solid ${sel?'#1a7fd4':'#d8e4f0'};background:${sel?'#1a7fd4':'#f8fafc'};color:${sel?'#fff':'#4a6080'};font-size:.88rem;font-weight:${sel?'700':'500'};cursor:pointer;font-family:inherit;white-space:nowrap">${y==='全部'?'全部':y+'年'}</button>`;
+        }).join('');
+      }
+      const filteredYearKeys=this._ovExpYear?yearKeys.filter(y=>y===this._ovExpYear):yearKeys;
       // Build index-based column order: [0(月份), totalIdx, ...rest]
       const totalIdx=hdr.findIndex(h=>String(h||'').trim()==='總和');
       // colOrder: array of original indices in desired display order
@@ -1035,7 +1071,7 @@ const APP = {
         html+=`<th style="min-width:${w}px">${h}</th>`;
       });
       html+=`</tr></thead><tbody>`;
-      yearKeys.forEach(yr=>{
+      filteredYearKeys.forEach(yr=>{
         const yrRows=yearMap[yr];
         html+=`<tr class="yr-group-hdr"><td><strong>${yr}</strong></td>${colOrder.slice(1).map(()=>'<td></td>').join('')}</tr>`;
         yrRows.forEach(r=>{
