@@ -2002,8 +2002,13 @@ const APP = {
     document.querySelectorAll('.data-counted-chip').forEach(c=>c.classList.toggle('on',c.dataset.counted===val));
   },
 
-  _onAmountFocus(input){
-    input.value=input.value.replace(/,/g,'');
+  _onAmountInput(input){
+    const fromEnd=input.value.length-input.selectionEnd;
+    const raw=input.value.replace(/[^0-9]/g,'');
+    const formatted=raw?Number(raw).toLocaleString():'';
+    input.value=formatted;
+    const pos=Math.max(0,formatted.length-fromEnd);
+    input.setSelectionRange(pos,pos);
   },
   _onAmountBlur(input){
     const raw=input.value.replace(/[^0-9]/g,'');
